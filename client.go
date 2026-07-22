@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/coder/websocket"
@@ -31,7 +32,6 @@ type options struct {
 // Client 是 SDK 的统一入口。
 type Client struct {
 	api    *api.Client
-	caller transport.Caller
 	events <-chan event.Event
 	close  func() error
 }
@@ -111,6 +111,11 @@ func DialWebSocket(ctx context.Context, url string, opts ...Option) (*Client, er
 // ServeReverseWebSocket 监听反向 WebSocket，并把每个连接包装为 Client。
 func ServeReverseWebSocket(ctx context.Context, addr string, handler func(*Client), opts ...Option) error {
 	cfg := collectOptions(opts...)
+	var clientsMu sync.Mutex
+	clients := make(map[*Client]struct{})
+	var handlers sync.WaitGroup
+	var shuttingDown bool
+
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if cfg.token != "" && r.Header.Get("Authorization") != "Bearer "+cfg.token {
@@ -127,17 +132,56 @@ func ServeReverseWebSocket(ctx context.Context, addr string, handler func(*Clien
 			Logger:         cfg.logger,
 		})
 		client := newClient(caller, caller.Events(), caller.Close)
+		clientsMu.Lock()
+		if shuttingDown {
+			clientsMu.Unlock()
+			_ = client.Close()
+			return
+		}
+		clients[client] = struct{}{}
+		handlers.Add(1)
+		clientsMu.Unlock()
 		go func() {
-			defer client.Close()
+			defer handlers.Done()
+			defer func() {
+				clientsMu.Lock()
+				delete(clients, client)
+				clientsMu.Unlock()
+				_ = client.Close()
+			}()
 			handler(client)
 		}()
 	})
 	server := &http.Server{Addr: addr, Handler: mux}
+	var shutdownOnce sync.Once
+	shutdown := func() {
+		shutdownOnce.Do(func() {
+			clientsMu.Lock()
+			shuttingDown = true
+			active := make([]*Client, 0, len(clients))
+			for client := range clients {
+				active = append(active, client)
+			}
+			clientsMu.Unlock()
+			_ = server.Close()
+			for _, client := range active {
+				_ = client.Close()
+			}
+		})
+	}
+	done := make(chan struct{})
 	go func() {
-		<-ctx.Done()
-		_ = server.Shutdown(context.Background())
+		select {
+		case <-ctx.Done():
+			shutdown()
+		case <-done:
+		}
 	}()
-	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+	err := server.ListenAndServe()
+	close(done)
+	shutdown()
+	handlers.Wait()
+	if err != nil && err != http.ErrServerClosed {
 		return err
 	}
 	return nil
@@ -155,7 +199,7 @@ func (c *Client) Events() <-chan event.Event {
 
 // Call 调用原始 action。
 func (c *Client) Call(ctx context.Context, action string, params any, result any) error {
-	return c.caller.Call(ctx, action, params, result)
+	return c.api.Call(ctx, action, params, result)
 }
 
 // Close 关闭底层连接。HTTP client 调用该方法无副作用。
@@ -177,7 +221,6 @@ func collectOptions(opts ...Option) options {
 func newClient(caller transport.Caller, events <-chan event.Event, closeFn func() error) *Client {
 	return &Client{
 		api:    api.NewClient(caller),
-		caller: caller,
 		events: events,
 		close:  closeFn,
 	}

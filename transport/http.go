@@ -50,8 +50,8 @@ func NewHTTPCaller(baseURL string, opts HTTPOptions) *HTTPCaller {
 }
 
 type envelope struct {
-	Status  string          `json:"status"`
-	RetCode int             `json:"retcode"`
+	Status  *string         `json:"status"`
+	RetCode *int            `json:"retcode"`
 	Data    json.RawMessage `json:"data"`
 	Message string          `json:"message"`
 	Wording string          `json:"wording"`
@@ -90,11 +90,14 @@ func decodeEnvelope(action string, raw []byte, result any) error {
 	if err := json.Unmarshal(raw, &env); err != nil {
 		return &errorsx.ProtocolError{Message: "解析响应 envelope 失败", Raw: raw}
 	}
-	if env.Status != "" && env.Status != "ok" || env.RetCode != 0 {
+	if env.Status == nil || env.RetCode == nil {
+		return &errorsx.ProtocolError{Message: "响应 envelope 缺少 status 或 retcode", Raw: raw}
+	}
+	if *env.Status != "ok" || *env.RetCode != 0 {
 		return &errorsx.APIError{
 			Action:  action,
-			Status:  env.Status,
-			RetCode: env.RetCode,
+			Status:  *env.Status,
+			RetCode: *env.RetCode,
 			Message: env.Message,
 			Wording: env.Wording,
 			Raw:     raw,

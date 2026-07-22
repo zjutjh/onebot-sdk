@@ -40,6 +40,8 @@ type WebSocketCaller struct {
 	logger         *slog.Logger
 }
 
+const webSocketReadLimit = 64 << 20
+
 type wsRequest struct {
 	Action string `json:"action"`
 	Params any    `json:"params"`
@@ -88,6 +90,7 @@ func NewWebSocketCaller(conn *websocket.Conn, opts WebSocketOptions) *WebSocketC
 		closed:         make(chan struct{}),
 		logger:         opts.Logger,
 	}
+	conn.SetReadLimit(webSocketReadLimit)
 	go c.readLoop()
 	return c
 }
@@ -106,20 +109,19 @@ func (c *WebSocketCaller) Call(ctx context.Context, action string, params any, r
 	}
 	defer c.removePending(echo)
 
+	waitCtx, cancel := context.WithTimeout(ctx, c.requestTimeout)
+	defer cancel()
+
 	payload, err := json.Marshal(wsRequest{Action: action, Params: params, Echo: echo})
 	if err != nil {
 		return fmt.Errorf("编码 WebSocket 请求失败: %w", err)
 	}
-	if err := c.conn.Write(ctx, websocket.MessageText, payload); err != nil {
+	if err := c.conn.Write(waitCtx, websocket.MessageText, payload); err != nil {
+		if errors.Is(waitCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
+			return errorsx.ErrTimeout
+		}
 		return &errorsx.TransportError{Op: action, Err: err}
 	}
-
-	waitCtx := ctx
-	cancel := func() {}
-	if _, ok := ctx.Deadline(); !ok && c.requestTimeout > 0 {
-		waitCtx, cancel = context.WithTimeout(ctx, c.requestTimeout)
-	}
-	defer cancel()
 
 	select {
 	case raw := <-respCh:
@@ -187,6 +189,9 @@ func (c *WebSocketCaller) readLoop() {
 		}
 		ev, err := event.Parse(data)
 		if err != nil {
+			if c.logger != nil {
+				c.logger.Warn("无法解析 NapCat WebSocket 消息", "error", err)
+			}
 			continue
 		}
 		select {
