@@ -34,7 +34,6 @@ type Client struct {
 	caller transport.Caller
 	events <-chan event.Event
 	close  func() error
-	logger *slog.Logger
 }
 
 // WithToken 设置 NapCat token。
@@ -70,7 +69,7 @@ func WithRequestTimeout(timeout time.Duration) Option {
 	return func(o *options) { o.requestTimeout = timeout }
 }
 
-// WithEventBuffer 设置事件 channel 缓冲大小。
+// WithEventBuffer 设置事件 channel 缓冲大小。缓冲区满时新事件会被丢弃。
 func WithEventBuffer(size int) Option {
 	return func(o *options) { o.eventBuffer = size }
 }
@@ -81,7 +80,7 @@ func WithLogger(logger *slog.Logger) Option {
 }
 
 // NewHTTPClient 创建基于 HTTP API 的 client。
-func NewHTTPClient(baseURL string, opts ...Option) (*Client, error) {
+func NewHTTPClient(baseURL string, opts ...Option) *Client {
 	cfg := collectOptions(opts...)
 	caller := transport.NewHTTPCaller(baseURL, transport.HTTPOptions{
 		Token:       cfg.token,
@@ -90,7 +89,7 @@ func NewHTTPClient(baseURL string, opts ...Option) (*Client, error) {
 		RetryWait:   cfg.httpRetryWait,
 		RestyClient: cfg.restyClient,
 	})
-	return newClient(caller, nil, nil, cfg.logger), nil
+	return newClient(caller, nil, nil)
 }
 
 // DialWebSocket 创建基于正向 WebSocket 的 client。
@@ -101,11 +100,12 @@ func DialWebSocket(ctx context.Context, url string, opts ...Option) (*Client, er
 		RequestTimeout: cfg.requestTimeout,
 		EventBuffer:    cfg.eventBuffer,
 		DialOptions:    cfg.wsDialOptions,
+		Logger:         cfg.logger,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return newClient(caller, caller.Events(), caller.Close, cfg.logger), nil
+	return newClient(caller, caller.Events(), caller.Close), nil
 }
 
 // ServeReverseWebSocket 监听反向 WebSocket，并把每个连接包装为 Client。
@@ -124,9 +124,13 @@ func ServeReverseWebSocket(ctx context.Context, addr string, handler func(*Clien
 		caller := transport.NewWebSocketCaller(conn, transport.WebSocketOptions{
 			RequestTimeout: cfg.requestTimeout,
 			EventBuffer:    cfg.eventBuffer,
+			Logger:         cfg.logger,
 		})
-		client := newClient(caller, caller.Events(), caller.Close, cfg.logger)
-		go handler(client)
+		client := newClient(caller, caller.Events(), caller.Close)
+		go func() {
+			defer client.Close()
+			handler(client)
+		}()
 	})
 	server := &http.Server{Addr: addr, Handler: mux}
 	go func() {
@@ -170,12 +174,11 @@ func collectOptions(opts ...Option) options {
 	return cfg
 }
 
-func newClient(caller transport.Caller, events <-chan event.Event, closeFn func() error, logger *slog.Logger) *Client {
+func newClient(caller transport.Caller, events <-chan event.Event, closeFn func() error) *Client {
 	return &Client{
 		api:    api.NewClient(caller),
 		caller: caller,
 		events: events,
 		close:  closeFn,
-		logger: logger,
 	}
 }

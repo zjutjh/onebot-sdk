@@ -2,9 +2,10 @@
 package event
 
 import (
+	"bytes"
 	"fmt"
 
-	"github.com/zjutjh/napcat-sdk/internal/jsonx"
+	json "github.com/zjutjh/napcat-sdk/internal/jsonx"
 	"github.com/zjutjh/napcat-sdk/message"
 )
 
@@ -21,7 +22,7 @@ type Base struct {
 	EventTime     int64  `json:"time"`
 	EventPostType string `json:"post_type"`
 	EventSelfID   int64  `json:"self_id"`
-	RawData       []byte `json:"-"`
+	rawData       []byte
 }
 
 // PostType 返回事件类型。
@@ -34,7 +35,7 @@ func (b Base) SelfID() int64 { return b.EventSelfID }
 func (b Base) Time() int64 { return b.EventTime }
 
 // Raw 返回原始事件 JSON。
-func (b Base) Raw() []byte { return b.RawData }
+func (b Base) Raw() []byte { return bytes.Clone(b.rawData) }
 
 // PrivateSender 表示私聊发送者信息。
 type PrivateSender struct {
@@ -94,7 +95,7 @@ type envelope struct {
 // Parse 将 OneBot 事件 JSON 解析为具体事件类型。
 func Parse(data []byte) (Event, error) {
 	var env envelope
-	if err := jsonx.Unmarshal(data, &env); err != nil {
+	if err := json.Unmarshal(data, &env); err != nil {
 		return nil, fmt.Errorf("解析事件 envelope 失败: %w", err)
 	}
 
@@ -102,20 +103,20 @@ func Parse(data []byte) (Event, error) {
 		EventTime:     env.Time,
 		EventPostType: env.PostType,
 		EventSelfID:   env.SelfID,
-		RawData:       append([]byte(nil), data...),
+		rawData:       bytes.Clone(data),
 	}
 
 	switch {
 	case env.PostType == "message" && env.MessageType == "private":
 		var ev PrivateMessage
-		if err := jsonx.Unmarshal(data, &ev); err != nil {
+		if err := json.Unmarshal(data, &ev); err != nil {
 			return nil, fmt.Errorf("解析私聊消息失败: %w", err)
 		}
 		ev.Base = base
 		return &ev, nil
 	case env.PostType == "message" && env.MessageType == "group":
 		var ev GroupMessage
-		if err := jsonx.Unmarshal(data, &ev); err != nil {
+		if err := json.Unmarshal(data, &ev); err != nil {
 			return nil, fmt.Errorf("解析群消息失败: %w", err)
 		}
 		ev.Base = base

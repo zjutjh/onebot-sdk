@@ -4,123 +4,123 @@ package gen
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
 	"go/format"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"unicode"
 
-	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/zjutjh/napcat-sdk/internal/jsonx"
+	"github.com/pb33f/libopenapi"
+	highbase "github.com/pb33f/libopenapi/datamodel/high/base"
+	highv3 "github.com/pb33f/libopenapi/datamodel/high/v3"
+	gogen "github.com/pb33f/libopenapi/generator/golang"
+	"github.com/pb33f/libopenapi/orderedmap"
 )
 
 // GenerateFromFile 从 OpenAPI spec 生成 API 代码。
 func GenerateFromFile(specPath string, outDir string) error {
-	loader := openapi3.NewLoader()
-	if _, err := loader.LoadFromFile(specPath); err != nil {
-		return fmt.Errorf("加载 OpenAPI spec 失败: %w", err)
-	}
-
 	data, err := os.ReadFile(specPath)
 	if err != nil {
 		return fmt.Errorf("读取 OpenAPI spec 失败: %w", err)
 	}
-	var doc document
-	if err := jsonx.Unmarshal(data, &doc); err != nil {
+	doc, err := libopenapi.NewDocument(data)
+	if err != nil {
 		return fmt.Errorf("解析 OpenAPI spec 失败: %w", err)
 	}
+	model, err := doc.BuildV3Model()
+	if err != nil {
+		return fmt.Errorf("构建 OpenAPI 模型失败: %w", err)
+	}
 
-	actions := collectActions(doc)
+	actions, err := collectActions(&model.Model)
+	if err != nil {
+		return err
+	}
 	if len(actions) == 0 {
 		return fmt.Errorf("OpenAPI spec 中没有可生成的 action")
+	}
+
+	version := model.Model.Version
+	if model.Model.Info != nil && model.Model.Info.Version != "" {
+		version = model.Model.Info.Version
+	}
+	models := orderedmap.New[string, *highbase.SchemaProxy]()
+	if model.Model.Components != nil && model.Model.Components.Schemas != nil {
+		for name, schema := range model.Model.Components.Schemas.FromOldest() {
+			models.Set(name, schema)
+		}
+	}
+	for _, action := range actions {
+		request, err := modelSchema(action.RequestSchema, action.Summary+" 请求参数。")
+		if err != nil {
+			return fmt.Errorf("生成 %s 请求模型失败: %w", action.Action, err)
+		}
+		response, err := modelSchema(action.ResponseSchema, action.Summary+" 响应数据。")
+		if err != nil {
+			return fmt.Errorf("生成 %s 响应模型失败: %w", action.Action, err)
+		}
+		if err := addModel(models, action.Name+"Request", request); err != nil {
+			return err
+		}
+		if err := addModel(models, action.Name+"Response", response); err != nil {
+			return err
+		}
+	}
+
+	typeSource, modelTypes, err := generateModels(models, version)
+	if err != nil {
+		return fmt.Errorf("生成模型失败: %w", err)
+	}
+	for i := range actions {
+		actions[i].RequestType = modelTypes[actions[i].Name+"Request"]
+		actions[i].ResponseType = modelTypes[actions[i].Name+"Response"]
 	}
 
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return fmt.Errorf("创建输出目录失败: %w", err)
 	}
-
-	files := map[string][]byte{
-		"actions_gen.go":   generateActions(actions),
-		"client_gen.go":    generateClient(actions),
-		"requests_gen.go":  generateRequests(actions),
-		"responses_gen.go": generateResponses(actions),
-		"types_gen.go":     generateTypes(),
+	files := []struct {
+		name    string
+		content []byte
+	}{
+		{name: "actions_gen.go", content: generateActions(actions, version)},
+		{name: "client_gen.go", content: generateClient(actions, version)},
+		{name: "types_gen.go", content: typeSource},
 	}
-	for name, content := range files {
-		formatted, err := format.Source(content)
+	for _, file := range files {
+		formatted, err := format.Source(file.content)
 		if err != nil {
-			return fmt.Errorf("格式化 %s 失败: %w\n%s", name, err, content)
+			return fmt.Errorf("格式化 %s 失败: %w\n%s", file.name, err, file.content)
 		}
-		if err := os.WriteFile(filepath.Join(outDir, name), formatted, 0o644); err != nil {
-			return fmt.Errorf("写入 %s 失败: %w", name, err)
+		if err := os.WriteFile(filepath.Join(outDir, file.name), formatted, 0o644); err != nil {
+			return fmt.Errorf("写入 %s 失败: %w", file.name, err)
 		}
 	}
 	return nil
-}
-
-type document struct {
-	Paths      map[string]pathItem `json:"paths"`
-	Components components          `json:"components"`
-}
-
-type components struct {
-	Schemas map[string]*schema `json:"schemas"`
-}
-
-type pathItem struct {
-	Post *operation `json:"post"`
-}
-
-type operation struct {
-	Summary     string              `json:"summary"`
-	RequestBody *requestBody        `json:"requestBody"`
-	Responses   map[string]response `json:"responses"`
-}
-
-type requestBody struct {
-	Content map[string]mediaType `json:"content"`
-}
-
-type response struct {
-	Content map[string]mediaType `json:"content"`
-}
-
-type mediaType struct {
-	Schema *schema `json:"schema"`
-}
-
-type schema struct {
-	Ref         string             `json:"$ref"`
-	Type        any                `json:"type"`
-	Description string             `json:"description"`
-	Properties  map[string]*schema `json:"properties"`
-	Items       *schema            `json:"items"`
-	Required    []string           `json:"required"`
-	AnyOf       []*schema          `json:"anyOf"`
-	AllOf       []*schema          `json:"allOf"`
 }
 
 type actionSpec struct {
 	Action         string
 	Name           string
 	Summary        string
-	RequestFields  []fieldSpec
-	ResponseFields []fieldSpec
+	RequestType    string
+	ResponseType   string
+	RequestSchema  *highbase.SchemaProxy
+	ResponseSchema *highbase.SchemaProxy
 }
 
-type fieldSpec struct {
-	Name        string
-	JSONName    string
-	Type        string
-	Description string
-	Required    bool
-}
-
-func collectActions(doc document) []actionSpec {
-	paths := make([]string, 0, len(doc.Paths))
-	for path := range doc.Paths {
+func collectActions(doc *highv3.Document) ([]actionSpec, error) {
+	if doc == nil || doc.Paths == nil || doc.Paths.PathItems == nil {
+		return nil, nil
+	}
+	paths := make([]string, 0, doc.Paths.PathItems.Len())
+	for path := range doc.Paths.PathItems.FromOldest() {
 		paths = append(paths, path)
 	}
 	sort.Strings(paths)
@@ -128,166 +128,174 @@ func collectActions(doc document) []actionSpec {
 	actions := make([]actionSpec, 0, len(paths))
 	usedNames := map[string]int{}
 	for _, path := range paths {
-		item := doc.Paths[path]
-		if item.Post == nil {
+		item, _ := doc.Paths.PathItems.Get(path)
+		if item == nil || item.Post == nil {
 			continue
 		}
+		responseSchema, err := responseDataSchema(item.Post)
+		if err != nil {
+			return nil, fmt.Errorf("读取 %s 响应 schema 失败: %w", path, err)
+		}
 		action := strings.TrimPrefix(path, "/")
-		name := uniqueName(ToExportedName(action), usedNames)
 		actions = append(actions, actionSpec{
 			Action:         action,
-			Name:           name,
+			Name:           uniqueName(ToExportedName(action), usedNames),
 			Summary:        item.Post.Summary,
-			RequestFields:  fieldsFromSchema(requestSchema(item.Post), doc.Components.Schemas),
-			ResponseFields: fieldsFromSchema(responseDataSchema(item.Post), doc.Components.Schemas),
+			RequestSchema:  requestSchema(item.Post),
+			ResponseSchema: responseSchema,
 		})
 	}
-	return actions
+	return actions, nil
 }
 
-func requestSchema(op *operation) *schema {
-	if op == nil || op.RequestBody == nil {
+func requestSchema(op *highv3.Operation) *highbase.SchemaProxy {
+	if op == nil || op.RequestBody == nil || op.RequestBody.Content == nil {
 		return nil
 	}
-	if mt, ok := op.RequestBody.Content["application/json"]; ok {
-		return mt.Schema
+	mediaType, ok := op.RequestBody.Content.Get("application/json")
+	if !ok || mediaType == nil {
+		return nil
 	}
+	return mediaType.Schema
+}
+
+func responseDataSchema(op *highv3.Operation) (*highbase.SchemaProxy, error) {
+	if op == nil || op.Responses == nil {
+		return nil, nil
+	}
+	response := op.Responses.FindResponseByCode(200)
+	if response == nil {
+		response = op.Responses.Default
+	}
+	if response == nil || response.Content == nil {
+		return nil, nil
+	}
+	mediaType, ok := response.Content.Get("application/json")
+	if !ok || mediaType == nil {
+		return nil, nil
+	}
+	return findDataSchema(mediaType.Schema, make(map[*highbase.SchemaProxy]bool))
+}
+
+func findDataSchema(proxy *highbase.SchemaProxy, seen map[*highbase.SchemaProxy]bool) (*highbase.SchemaProxy, error) {
+	if proxy == nil || seen[proxy] {
+		return nil, nil
+	}
+	seen[proxy] = true
+	schema, err := proxy.BuildSchema()
+	if err != nil {
+		return nil, err
+	}
+	if schema == nil {
+		return nil, fmt.Errorf("schema 为空")
+	}
+	if schema.Properties != nil {
+		if data, ok := schema.Properties.Get("data"); ok {
+			return data, nil
+		}
+	}
+	// allOf 后面的接口定义会覆盖前面的通用 envelope。
+	for i := len(schema.AllOf) - 1; i >= 0; i-- {
+		data, err := findDataSchema(schema.AllOf[i], seen)
+		if err != nil {
+			return nil, err
+		}
+		if data != nil {
+			return data, nil
+		}
+	}
+	return nil, nil
+}
+
+func modelSchema(proxy *highbase.SchemaProxy, description string) (*highbase.SchemaProxy, error) {
+	if proxy == nil {
+		return highbase.CreateSchemaProxy(&highbase.Schema{
+			Type:        []string{"object"},
+			Description: description,
+		}), nil
+	}
+	schema, err := proxy.BuildSchema()
+	if err != nil {
+		return nil, err
+	}
+	if schema == nil {
+		return nil, fmt.Errorf("schema 为空")
+	}
+	clone := *schema
+	if clone.Description == "" {
+		clone.Description = description
+	}
+	return highbase.CreateSchemaProxy(&clone), nil
+}
+
+func addModel(models *orderedmap.Map[string, *highbase.SchemaProxy], name string, schema *highbase.SchemaProxy) error {
+	if _, exists := models.Get(name); exists {
+		return fmt.Errorf("生成模型名称冲突: %s", name)
+	}
+	models.Set(name, schema)
 	return nil
 }
 
-func responseDataSchema(op *operation) *schema {
-	if op == nil {
-		return nil
+func generateModels(schemas *orderedmap.Map[string, *highbase.SchemaProxy], version string) ([]byte, map[string]string, error) {
+	generator := gogen.NewGenerator(
+		gogen.WithPackageName("api"),
+		gogen.WithGeneratedComment(true),
+		gogen.WithHeaderComment(fmt.Sprintf("代码由 napcatgen 根据 NapCat OpenAPI %s 生成；请勿手动修改。", version)),
+		gogen.WithNestedTypeNameDelimiter(""),
+		gogen.WithTypeNameResolver(ToExportedName),
+		gogen.WithEnumConstants(true),
+	)
+	file, err := generator.RenderSchemas(schemas)
+	if err != nil {
+		return nil, nil, err
 	}
-	resp, ok := op.Responses["200"]
-	if !ok {
-		resp, ok = op.Responses["default"]
-		if !ok {
-			return nil
+	if len(file.Types) != schemas.Len() {
+		return nil, nil, fmt.Errorf("生成类型数量不匹配: schema=%d type=%d", schemas.Len(), len(file.Types))
+	}
+	types := make(map[string]string, len(file.Types))
+	i := 0
+	for name := range schemas.FromOldest() {
+		generated := file.Types[i]
+		typeName := generated.Name
+		if generated.Kind == gogen.KindUnion {
+			typeName += "Union"
 		}
+		types[name] = typeName
+		i++
 	}
-	mt, ok := resp.Content["application/json"]
-	if !ok || mt.Schema == nil {
-		return nil
+	source, err := redirectJSONImport(file.Source)
+	if err != nil {
+		return nil, nil, err
 	}
-	return findDataSchema(mt.Schema)
+	return source, types, nil
 }
 
-func findDataSchema(s *schema) *schema {
-	if s == nil {
-		return nil
+func redirectJSONImport(source []byte) ([]byte, error) {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, "types_gen.go", source, parser.ParseComments)
+	if err != nil {
+		return nil, fmt.Errorf("解析生成模型失败: %w", err)
 	}
-	if data := s.Properties["data"]; data != nil {
-		return data
-	}
-	for _, child := range s.AllOf {
-		if data := findDataSchema(child); data != nil {
-			return data
+	for _, spec := range file.Imports {
+		path, err := strconv.Unquote(spec.Path.Value)
+		if err != nil {
+			return nil, fmt.Errorf("解析生成模型 import 失败: %w", err)
+		}
+		if path == "encoding/json" {
+			spec.Name = ast.NewIdent("json")
+			spec.Path.Value = strconv.Quote("github.com/zjutjh/napcat-sdk/internal/jsonx")
 		}
 	}
-	return nil
+	var out bytes.Buffer
+	if err := format.Node(&out, fset, file); err != nil {
+		return nil, fmt.Errorf("重写生成模型 JSON import 失败: %w", err)
+	}
+	return out.Bytes(), nil
 }
 
-func fieldsFromSchema(s *schema, components map[string]*schema) []fieldSpec {
-	s = resolveSchema(s, components)
-	if s == nil || len(s.Properties) == 0 {
-		return nil
-	}
-	required := map[string]bool{}
-	for _, name := range s.Required {
-		required[name] = true
-	}
-
-	keys := make([]string, 0, len(s.Properties))
-	for key := range s.Properties {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-
-	fields := make([]fieldSpec, 0, len(keys))
-	used := map[string]int{}
-	for _, key := range keys {
-		prop := s.Properties[key]
-		name := uniqueName(fieldName(key), used)
-		fields = append(fields, fieldSpec{
-			Name:        name,
-			JSONName:    key,
-			Type:        goType(prop, components),
-			Description: sanitizeComment(prop.Description),
-			Required:    required[key],
-		})
-	}
-	return fields
-}
-
-func resolveSchema(s *schema, components map[string]*schema) *schema {
-	if s == nil || s.Ref == "" {
-		return s
-	}
-	name := refName(s.Ref)
-	if components == nil {
-		return s
-	}
-	if resolved := components[name]; resolved != nil {
-		return resolved
-	}
-	return s
-}
-
-func goType(s *schema, components map[string]*schema) string {
-	s = resolveSchema(s, components)
-	if s == nil {
-		return "any"
-	}
-	if len(s.AnyOf) > 0 {
-		return "any"
-	}
-	switch schemaType(s) {
-	case "string":
-		return "string"
-	case "integer", "number":
-		return "int64"
-	case "boolean":
-		return "bool"
-	case "array":
-		if s.Items == nil {
-			return "[]any"
-		}
-		itemType := goType(s.Items, components)
-		if itemType == "map[string]any" {
-			return "[]map[string]any"
-		}
-		if itemType == "any" {
-			return "[]any"
-		}
-		return "[]" + itemType
-	case "object":
-		return "map[string]any"
-	default:
-		return "any"
-	}
-}
-
-func schemaType(s *schema) string {
-	switch value := s.Type.(type) {
-	case string:
-		return value
-	case []any:
-		for _, item := range value {
-			if text, ok := item.(string); ok && text != "null" {
-				return text
-			}
-		}
-	}
-	if len(s.Properties) > 0 {
-		return "object"
-	}
-	return ""
-}
-
-func generateActions(actions []actionSpec) []byte {
+func generateActions(actions []actionSpec, version string) []byte {
 	var b bytes.Buffer
-	writeHeader(&b)
+	writeHeader(&b, version)
 	b.WriteString("package api\n\n")
 	b.WriteString("// Action 是 NapCat API action 名称。\n")
 	b.WriteString("type Action string\n\n")
@@ -300,41 +308,15 @@ func generateActions(actions []actionSpec) []byte {
 	return b.Bytes()
 }
 
-func generateRequests(actions []actionSpec) []byte {
+func generateClient(actions []actionSpec, version string) []byte {
 	var b bytes.Buffer
-	writeHeader(&b)
-	b.WriteString("package api\n\n")
-	for _, action := range actions {
-		writeComment(&b, action.Name+"Request", action.Summary+" 请求参数。")
-		fmt.Fprintf(&b, "type %sRequest struct {\n", action.Name)
-		writeFields(&b, action.RequestFields)
-		b.WriteString("}\n\n")
-	}
-	return b.Bytes()
-}
-
-func generateResponses(actions []actionSpec) []byte {
-	var b bytes.Buffer
-	writeHeader(&b)
-	b.WriteString("package api\n\n")
-	for _, action := range actions {
-		writeComment(&b, action.Name+"Response", action.Summary+" 响应数据。")
-		fmt.Fprintf(&b, "type %sResponse struct {\n", action.Name)
-		writeFields(&b, action.ResponseFields)
-		b.WriteString("}\n\n")
-	}
-	return b.Bytes()
-}
-
-func generateClient(actions []actionSpec) []byte {
-	var b bytes.Buffer
-	writeHeader(&b)
+	writeHeader(&b, version)
 	b.WriteString("package api\n\n")
 	b.WriteString("import \"context\"\n\n")
 	for _, action := range actions {
 		writeComment(&b, action.Name, action.Summary)
-		fmt.Fprintf(&b, "func (c *Client) %s(ctx context.Context, req %sRequest) (*%sResponse, error) {\n", action.Name, action.Name, action.Name)
-		fmt.Fprintf(&b, "\tvar out %sResponse\n", action.Name)
+		fmt.Fprintf(&b, "func (c *Client) %s(ctx context.Context, req %s) (*%s, error) {\n", action.Name, action.RequestType, action.ResponseType)
+		fmt.Fprintf(&b, "\tvar out %s\n", action.ResponseType)
 		fmt.Fprintf(&b, "\tif err := c.caller.Call(ctx, string(Action%s), req, &out); err != nil {\n", action.Name)
 		b.WriteString("\t\treturn nil, err\n")
 		b.WriteString("\t}\n")
@@ -344,30 +326,8 @@ func generateClient(actions []actionSpec) []byte {
 	return b.Bytes()
 }
 
-func generateTypes() []byte {
-	var b bytes.Buffer
-	writeHeader(&b)
-	b.WriteString("package api\n\n")
-	b.WriteString("// RawMap 表示 OpenAPI 中无法稳定展开的对象字段。\n")
-	b.WriteString("type RawMap = map[string]any\n")
-	return b.Bytes()
-}
-
-func writeFields(b *bytes.Buffer, fields []fieldSpec) {
-	for _, field := range fields {
-		if field.Description != "" {
-			fmt.Fprintf(b, "\t// %s %s\n", field.Name, field.Description)
-		}
-		tag := field.JSONName
-		if !field.Required {
-			tag += ",omitempty"
-		}
-		fmt.Fprintf(b, "\t%s %s `json:%q`\n", field.Name, field.Type, tag)
-	}
-}
-
-func writeHeader(b *bytes.Buffer) {
-	b.WriteString("// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.6 生成；请勿手动修改。\n\n")
+func writeHeader(b *bytes.Buffer, version string) {
+	fmt.Fprintf(b, "// 代码由 napcatgen 根据 NapCat OpenAPI %s 生成；请勿手动修改。\n\n", version)
 }
 
 func writeComment(b *bytes.Buffer, name string, text string) {
@@ -418,14 +378,6 @@ func ToExportedName(action string) string {
 	return b.String()
 }
 
-func fieldName(name string) string {
-	out := ToExportedName(name)
-	if out == "ID" {
-		return "ID"
-	}
-	return out
-}
-
 var splitRegexp = regexp.MustCompile(`[^A-Za-z0-9]+`)
 
 func splitName(name string) []string {
@@ -451,12 +403,4 @@ func normalizeToken(token string) string {
 	}
 	runes[0] = unicode.ToUpper(runes[0])
 	return string(runes)
-}
-
-func refName(ref string) string {
-	idx := strings.LastIndex(ref, "/")
-	if idx == -1 {
-		return ref
-	}
-	return ref[idx+1:]
 }

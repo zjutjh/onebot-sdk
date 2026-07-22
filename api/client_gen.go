@@ -1,4 +1,4 @@
-// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.6 生成；请勿手动修改。
+// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.13 生成；请勿手动修改。
 
 package api
 
@@ -788,7 +788,7 @@ func (c *Client) GetLoginInfo(ctx context.Context, req GetLoginInfoRequest) (*Ge
 }
 
 // GetMiniAppArk 获取小程序 Ark
-func (c *Client) GetMiniAppArk(ctx context.Context, req GetMiniAppArkRequest) (*GetMiniAppArkResponse, error) {
+func (c *Client) GetMiniAppArk(ctx context.Context, req GetMiniAppArkRequestUnion) (*GetMiniAppArkResponse, error) {
 	var out GetMiniAppArkResponse
 	if err := c.caller.Call(ctx, string(ActionGetMiniAppArk), req, &out); err != nil {
 		return nil, err
@@ -1157,8 +1157,8 @@ func (c *Client) SendOnlineFolder(ctx context.Context, req SendOnlineFolderReque
 }
 
 // SendPacket 发送原始数据包
-func (c *Client) SendPacket(ctx context.Context, req SendPacketRequest) (*SendPacketResponse, error) {
-	var out SendPacketResponse
+func (c *Client) SendPacket(ctx context.Context, req SendPacketRequest) (*SendPacketResponseVariant1, error) {
+	var out SendPacketResponseVariant1
 	if err := c.caller.Call(ctx, string(ActionSendPacket), req, &out); err != nil {
 		return nil, err
 	}

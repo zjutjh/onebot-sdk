@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	spec := flag.String("spec", "internal/openapi/4.18.6/openapi.json", "OpenAPI spec 路径")
+	spec := flag.String("spec", "internal/openapi/4.18.13/openapi.json", "OpenAPI spec 路径")
 	out := flag.String("out", "api", "生成输出目录")
 	flag.Parse()
 

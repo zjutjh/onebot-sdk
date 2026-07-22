@@ -1,14 +1,21 @@
-// Package jsonx 统一封装 SDK 的 JSON 编解码实现。
+// Package jsonx 提供与 encoding/json 默认行为一致的 Sonic 编解码入口。
 package jsonx
 
-import "github.com/bytedance/sonic"
+import (
+	stdjson "encoding/json"
 
-// Marshal 使用 Sonic 编码 JSON。
-func Marshal(v any) ([]byte, error) {
-	return sonic.Marshal(v)
+	"github.com/bytedance/sonic"
+)
+
+// RawMessage 延迟解析一段 JSON。
+type RawMessage = stdjson.RawMessage
+
+// Marshal 使用 Sonic 的标准库兼容配置编码 JSON。
+func Marshal(value any) ([]byte, error) {
+	return sonic.ConfigStd.Marshal(value)
 }
 
-// Unmarshal 使用 Sonic 解码 JSON。
-func Unmarshal(data []byte, v any) error {
-	return sonic.Unmarshal(data, v)
+// Unmarshal 使用 Sonic 的标准库兼容配置解码 JSON。
+func Unmarshal(data []byte, value any) error {
+	return sonic.ConfigStd.Unmarshal(data, value)
 }

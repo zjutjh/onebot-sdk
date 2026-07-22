@@ -15,17 +15,22 @@ import (
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+	pong, err := api.NewOB11Message(message.Text("pong"))
+	if err != nil {
+		panic(err)
+	}
 
-	err := napcat.ServeReverseWebSocket(ctx, ":8080", func(client *napcat.Client) {
+	err = napcat.ServeReverseWebSocket(ctx, ":8080", func(client *napcat.Client) {
 		for ev := range client.Events() {
 			switch e := ev.(type) {
 			case *event.PrivateMessage:
 				if e.Message.Text() != "/ping" {
 					continue
 				}
+				userID := strconv.FormatInt(e.UserID, 10)
 				_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-					UserID:  strconv.FormatInt(e.UserID, 10),
-					Message: message.Text("pong"),
+					UserID:  &userID,
+					Message: pong,
 				})
 			}
 		}

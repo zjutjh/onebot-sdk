@@ -1,13 +1,13 @@
 # NapCat Go SDK
 
-这是一个面向 NapCat/OneBot 11 的纯 Go SDK。SDK 以 NapCat 官方 OpenAPI 4.18.6 为来源生成强类型 API 方法，并提供 HTTP、正向 WebSocket、反向 WebSocket server、事件解析和消息段构造能力。
+这是一个面向 NapCat/OneBot 11 的纯 Go SDK。SDK 以 NapCat 官方 OpenAPI 4.18.13 为来源生成强类型 API 方法，并提供 HTTP、正向 WebSocket、反向 WebSocket server、事件解析和消息段构造能力。
 
 ## 特性
 
-- 基于 NapCat 4.18.6 OpenAPI 生成 170 个 action 绑定。
+- 基于 NapCat 4.18.13 OpenAPI 生成 170 个 action 绑定。
 - HTTP 调用基于 Resty。
 - WebSocket 调用基于 coder/websocket，支持 echo 匹配和事件流。
-- JSON 编解码统一使用 Sonic。
+- JSON 编解码使用 Sonic 的标准库兼容配置。
 - 手写 OneBot 消息段和事件解析，不内置插件、命令或路由框架。
 
 ## 安装
@@ -34,11 +34,9 @@ import (
 func main() {
 	ctx := context.Background()
 	token := os.Getenv("NAPCAT_TOKEN")
+	userID := "123456"
 
-	client, err := napcat.NewHTTPClient("http://127.0.0.1:3000", napcat.WithToken(token))
-	if err != nil {
-		panic(err)
-	}
+	client := napcat.NewHTTPClient("http://127.0.0.1:3000", napcat.WithToken(token))
 
 	login, err := client.API().GetLoginInfo(ctx, api.GetLoginInfoRequest{})
 	if err != nil {
@@ -46,9 +44,13 @@ func main() {
 	}
 	fmt.Println("当前账号:", login.UserID)
 
+	msg, err := api.NewOB11Message(message.Text("pong"))
+	if err != nil {
+		panic(err)
+	}
 	_, err = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-		UserID:  "123456",
-		Message: message.Text("pong"),
+		UserID:  &userID,
+		Message: msg,
 	})
 	if err != nil {
 		panic(err)
@@ -80,15 +82,20 @@ func main() {
 	}
 	defer client.Close()
 
+	pong, err := api.NewOB11Message(message.Text("pong"))
+	if err != nil {
+		panic(err)
+	}
 	for ev := range client.Events() {
 		switch e := ev.(type) {
 		case *event.PrivateMessage:
 			if e.Message.Text() != "/ping" {
 				continue
 			}
+			userID := strconv.FormatInt(e.UserID, 10)
 			_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-				UserID:  strconv.FormatInt(e.UserID, 10),
-				Message: message.Text("pong"),
+				UserID:  &userID,
+				Message: pong,
 			})
 		}
 	}
@@ -110,4 +117,4 @@ err := client.Call(ctx, "some_new_action", map[string]any{"value": 1}, &result)
 go generate ./...
 ```
 
-生成器读取 `internal/openapi/4.18.6/openapi.json`，输出到 `api/`。生成文件头会标明“请勿手动修改”。
+生成器读取 `internal/openapi/4.18.13/openapi.json`，把 action、client 和所有模型输出到 `api/`。生成文件头会标明“请勿手动修改”。

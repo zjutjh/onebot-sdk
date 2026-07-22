@@ -24,13 +24,18 @@ func main() {
 	}
 	defer client.Close()
 
+	pong, err := api.NewOB11Message(message.Text("pong"))
+	if err != nil {
+		panic(err)
+	}
 	for ev := range client.Events() {
 		switch e := ev.(type) {
 		case *event.PrivateMessage:
 			if e.Message.Text() == "/ping" {
+				userID := strconv.FormatInt(e.UserID, 10)
 				_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-					UserID:  strconv.FormatInt(e.UserID, 10),
-					Message: message.Text("pong"),
+					UserID:  &userID,
+					Message: pong,
 				})
 			}
 		}

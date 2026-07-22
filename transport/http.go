@@ -2,14 +2,13 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/zjutjh/napcat-sdk/internal/errorsx"
-	"github.com/zjutjh/napcat-sdk/internal/jsonx"
+	json "github.com/zjutjh/napcat-sdk/internal/jsonx"
 )
 
 // HTTPOptions 配置 HTTP 调用器。
@@ -61,7 +60,7 @@ type envelope struct {
 
 // Call 通过 HTTP POST 调用一个 NapCat action。
 func (c *HTTPCaller) Call(ctx context.Context, action string, params any, result any) error {
-	body, err := jsonx.Marshal(params)
+	body, err := json.Marshal(params)
 	if err != nil {
 		return fmt.Errorf("编码 HTTP 请求失败: %w", err)
 	}
@@ -88,7 +87,7 @@ func (c *HTTPCaller) Call(ctx context.Context, action string, params any, result
 
 func decodeEnvelope(action string, raw []byte, result any) error {
 	var env envelope
-	if err := jsonx.Unmarshal(raw, &env); err != nil {
+	if err := json.Unmarshal(raw, &env); err != nil {
 		return &errorsx.ProtocolError{Message: "解析响应 envelope 失败", Raw: raw}
 	}
 	if env.Status != "" && env.Status != "ok" || env.RetCode != 0 {
@@ -104,7 +103,7 @@ func decodeEnvelope(action string, raw []byte, result any) error {
 	if result == nil || len(env.Data) == 0 || string(env.Data) == "null" {
 		return nil
 	}
-	if err := jsonx.Unmarshal(env.Data, result); err != nil {
+	if err := json.Unmarshal(env.Data, result); err != nil {
 		return &errorsx.ProtocolError{Message: "解析响应 data 失败", Raw: raw}
 	}
 	return nil

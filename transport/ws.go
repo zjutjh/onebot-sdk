@@ -2,9 +2,9 @@ package transport
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strconv"
 	"sync"
@@ -14,15 +14,17 @@ import (
 	"github.com/coder/websocket"
 	"github.com/zjutjh/napcat-sdk/event"
 	"github.com/zjutjh/napcat-sdk/internal/errorsx"
-	"github.com/zjutjh/napcat-sdk/internal/jsonx"
+	json "github.com/zjutjh/napcat-sdk/internal/jsonx"
 )
 
 // WebSocketOptions 配置 WebSocket 调用器。
 type WebSocketOptions struct {
 	Token          string
 	RequestTimeout time.Duration
-	EventBuffer    int
-	DialOptions    *websocket.DialOptions
+	// EventBuffer 已满时丢弃新事件，避免阻塞同一连接上的 API 响应。
+	EventBuffer int
+	DialOptions *websocket.DialOptions
+	Logger      *slog.Logger
 }
 
 // WebSocketCaller 使用 OneBot WebSocket action 模型调用 NapCat。
@@ -30,11 +32,12 @@ type WebSocketCaller struct {
 	conn           *websocket.Conn
 	requestTimeout time.Duration
 	events         chan event.Event
-	pending        map[string]chan envelope
+	pending        map[string]chan []byte
 	pendingMu      sync.Mutex
 	closed         chan struct{}
 	closeOnce      sync.Once
 	seq            atomic.Int64
+	logger         *slog.Logger
 }
 
 type wsRequest struct {
@@ -49,13 +52,14 @@ type echoProbe struct {
 
 // DialWebSocket 连接正向 WebSocket，并启动后台读循环。
 func DialWebSocket(ctx context.Context, url string, opts WebSocketOptions) (*WebSocketCaller, error) {
-	dialOpts := opts.DialOptions
-	if dialOpts == nil {
-		dialOpts = &websocket.DialOptions{}
+	dialOpts := &websocket.DialOptions{}
+	if opts.DialOptions != nil {
+		*dialOpts = *opts.DialOptions
 	}
 	if opts.Token != "" {
+		dialOpts.HTTPHeader = dialOpts.HTTPHeader.Clone()
 		if dialOpts.HTTPHeader == nil {
-			dialOpts.HTTPHeader = http.Header{}
+			dialOpts.HTTPHeader = make(http.Header)
 		}
 		dialOpts.HTTPHeader.Set("Authorization", "Bearer "+opts.Token)
 	}
@@ -80,8 +84,9 @@ func NewWebSocketCaller(conn *websocket.Conn, opts WebSocketOptions) *WebSocketC
 		conn:           conn,
 		requestTimeout: timeout,
 		events:         make(chan event.Event, eventBuffer),
-		pending:        make(map[string]chan envelope),
+		pending:        make(map[string]chan []byte),
 		closed:         make(chan struct{}),
+		logger:         opts.Logger,
 	}
 	go c.readLoop()
 	return c
@@ -95,13 +100,13 @@ func (c *WebSocketCaller) Events() <-chan event.Event {
 // Call 通过 WebSocket action 调用 NapCat。
 func (c *WebSocketCaller) Call(ctx context.Context, action string, params any, result any) error {
 	echo := strconv.FormatInt(c.seq.Add(1), 10)
-	respCh := make(chan envelope, 1)
+	respCh := make(chan []byte, 1)
 	if err := c.addPending(echo, respCh); err != nil {
 		return err
 	}
 	defer c.removePending(echo)
 
-	payload, err := jsonx.Marshal(wsRequest{Action: action, Params: params, Echo: echo})
+	payload, err := json.Marshal(wsRequest{Action: action, Params: params, Echo: echo})
 	if err != nil {
 		return fmt.Errorf("编码 WebSocket 请求失败: %w", err)
 	}
@@ -117,8 +122,7 @@ func (c *WebSocketCaller) Call(ctx context.Context, action string, params any, r
 	defer cancel()
 
 	select {
-	case env := <-respCh:
-		raw, _ := jsonx.Marshal(env)
+	case raw := <-respCh:
 		return decodeEnvelope(action, raw, result)
 	case <-waitCtx.Done():
 		if errors.Is(waitCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
@@ -134,27 +138,22 @@ func (c *WebSocketCaller) Call(ctx context.Context, action string, params any, r
 func (c *WebSocketCaller) Close() error {
 	var err error
 	c.closeOnce.Do(func() {
-		close(c.closed)
-		err = c.conn.Close(websocket.StatusNormalClosure, "")
 		c.pendingMu.Lock()
-		for echo, ch := range c.pending {
-			delete(c.pending, echo)
-			close(ch)
-		}
+		close(c.closed)
 		c.pendingMu.Unlock()
-		close(c.events)
+		err = c.conn.Close(websocket.StatusNormalClosure, "")
 	})
 	return err
 }
 
-func (c *WebSocketCaller) addPending(echo string, ch chan envelope) error {
+func (c *WebSocketCaller) addPending(echo string, ch chan []byte) error {
+	c.pendingMu.Lock()
+	defer c.pendingMu.Unlock()
 	select {
 	case <-c.closed:
 		return errorsx.ErrClosed
 	default:
 	}
-	c.pendingMu.Lock()
-	defer c.pendingMu.Unlock()
 	c.pending[echo] = ch
 	return nil
 }
@@ -166,6 +165,7 @@ func (c *WebSocketCaller) removePending(echo string) {
 }
 
 func (c *WebSocketCaller) readLoop() {
+	defer close(c.events)
 	defer c.Close()
 	for {
 		_, data, err := c.conn.Read(context.Background())
@@ -173,16 +173,15 @@ func (c *WebSocketCaller) readLoop() {
 			return
 		}
 		var probe echoProbe
-		if err := jsonx.Unmarshal(data, &probe); err == nil && probe.Echo != "" {
-			var env envelope
-			if err := jsonx.Unmarshal(data, &env); err != nil {
-				continue
-			}
+		if err := json.Unmarshal(data, &probe); err == nil && probe.Echo != "" {
 			c.pendingMu.Lock()
 			ch := c.pending[probe.Echo]
 			c.pendingMu.Unlock()
 			if ch != nil {
-				ch <- env
+				select {
+				case ch <- data:
+				default:
+				}
 			}
 			continue
 		}
@@ -194,14 +193,10 @@ func (c *WebSocketCaller) readLoop() {
 		case c.events <- ev:
 		case <-c.closed:
 			return
+		default:
+			if c.logger != nil {
+				c.logger.Warn("NapCat 事件缓冲区已满，丢弃事件", "post_type", ev.PostType())
+			}
 		}
 	}
-}
-
-func (e envelope) MarshalJSON() ([]byte, error) {
-	type alias envelope
-	if e.Data == nil {
-		return json.Marshal(alias(e))
-	}
-	return json.Marshal(alias(e))
 }

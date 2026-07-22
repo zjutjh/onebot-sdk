@@ -1,4 +1,4 @@
-//go:generate go run ../cmd/napcatgen -spec ../internal/openapi/4.18.6/openapi.json -out .
+//go:generate go run ../cmd/napcatgen -spec ../internal/openapi/4.18.13/openapi.json -out .
 
 // Package api 提供生成 API 方法共享的运行时类型。
 package api
@@ -6,12 +6,19 @@ package api
 import (
 	"context"
 
+	json "github.com/zjutjh/napcat-sdk/internal/jsonx"
 	"github.com/zjutjh/napcat-sdk/transport"
 )
 
 // Client 调用 NapCat action。强类型方法由生成代码补充。
 type Client struct {
 	caller transport.Caller
+}
+
+// NewOB11Message 把字符串、消息段或消息链编码为发送接口使用的消息联合类型。
+func NewOB11Message(value any) (OB11MessageMixTypeUnion, error) {
+	raw, err := json.Marshal(value)
+	return OB11MessageMixTypeUnion{Raw: raw}, err
 }
 
 // NewClient 创建 API client。

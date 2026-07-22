@@ -3,7 +3,6 @@ package message
 
 import (
 	"fmt"
-	"sort"
 	"strconv"
 	"strings"
 )
@@ -105,24 +104,6 @@ func (c Chain) OfType(segmentType string) Chain {
 		}
 	}
 	return out
-}
-
-// DebugString 返回稳定顺序的调试字符串，主要用于测试和日志。
-func (s Segment) DebugString() string {
-	data, ok := s.Data.(map[string]any)
-	if !ok {
-		return fmt.Sprintf("%s:%v", s.Type, s.Data)
-	}
-	keys := make([]string, 0, len(data))
-	for key := range data {
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	parts := make([]string, 0, len(keys))
-	for _, key := range keys {
-		parts = append(parts, key+"="+stringify(data[key]))
-	}
-	return s.Type + ":" + strings.Join(parts, ",")
 }
 
 func stringify(v any) string {

@@ -1,4 +1,4 @@
-// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.6 生成；请勿手动修改。
+// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.13 生成；请勿手动修改。
 
 package api
 
