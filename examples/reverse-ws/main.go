@@ -27,7 +27,7 @@ func main() {
 				if e.Message.Text() != "/ping" {
 					continue
 				}
-				userID := strconv.FormatInt(e.UserID, 10)
+				userID := strconv.FormatInt(e.UserID.Int64(), 10)
 				_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
 					UserID:  &userID,
 					Message: pong,

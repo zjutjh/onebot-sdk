@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"os"
 	"strconv"
 
@@ -32,12 +33,15 @@ func main() {
 		switch e := ev.(type) {
 		case *event.PrivateMessage:
 			if e.Message.Text() == "/ping" {
-				userID := strconv.FormatInt(e.UserID, 10)
+				userID := strconv.FormatInt(e.UserID.Int64(), 10)
 				_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
 					UserID:  &userID,
 					Message: pong,
 				})
 			}
 		}
+	}
+	if err := client.Err(); err != nil && !errors.Is(err, napcat.ErrClosed) {
+		panic(err)
 	}
 }

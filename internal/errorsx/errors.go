@@ -1,13 +1,19 @@
 // Package errorsx 保存 SDK 内部共享的错误类型。
 package errorsx
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 // ErrClosed 表示 client 或底层连接已经关闭。
 var ErrClosed = errors.New("napcat: client closed")
 
 // ErrTimeout 表示请求等待响应超时。
 var ErrTimeout = errors.New("napcat: request timeout")
+
+// ErrEventBackpressure 表示事件消费者持续无法接收事件。
+var ErrEventBackpressure = errors.New("napcat: event delivery backpressure")
 
 // TransportError 表示 HTTP 或 WebSocket 传输层失败。
 type TransportError struct {
@@ -18,10 +24,17 @@ type TransportError struct {
 }
 
 func (e *TransportError) Error() string {
-	if e.Err != nil {
-		return "napcat: transport error: " + e.Err.Error()
+	message := "napcat: transport error"
+	if e.Op != "" {
+		message += " during " + e.Op
 	}
-	return "napcat: transport error"
+	if e.Status != 0 {
+		message += fmt.Sprintf(" (HTTP %d)", e.Status)
+	}
+	if e.Err != nil {
+		return message + ": " + e.Err.Error()
+	}
+	return message
 }
 
 func (e *TransportError) Unwrap() error {
@@ -39,13 +52,14 @@ type APIError struct {
 }
 
 func (e *APIError) Error() string {
+	message := fmt.Sprintf("napcat: api error during %s (retcode %d)", e.Action, e.RetCode)
 	if e.Message != "" {
-		return "napcat: api error: " + e.Message
+		return message + ": " + e.Message
 	}
 	if e.Wording != "" {
-		return "napcat: api error: " + e.Wording
+		return message + ": " + e.Wording
 	}
-	return "napcat: api error"
+	return message
 }
 
 // ProtocolError 表示 SDK 无法解析 envelope、响应或事件。

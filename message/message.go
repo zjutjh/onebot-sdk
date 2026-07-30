@@ -107,25 +107,8 @@ func (c Chain) OfType(segmentType string) Chain {
 }
 
 func stringify(v any) string {
-	switch value := v.(type) {
-	case nil:
+	if v == nil {
 		return ""
-	case string:
-		return value
-	case fmt.Stringer:
-		return value.String()
-	case float64:
-		if value == float64(int64(value)) {
-			return strconv.FormatInt(int64(value), 10)
-		}
-		return strconv.FormatFloat(value, 'f', -1, 64)
-	case int:
-		return strconv.Itoa(value)
-	case int64:
-		return strconv.FormatInt(value, 10)
-	case uint64:
-		return strconv.FormatUint(value, 10)
-	default:
-		return fmt.Sprint(value)
 	}
+	return fmt.Sprint(v)
 }

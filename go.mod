@@ -5,7 +5,6 @@ go 1.25.7
 require (
 	github.com/bytedance/sonic v1.15.2
 	github.com/coder/websocket v1.8.15
-	github.com/go-resty/resty/v2 v2.17.2
 	github.com/pb33f/libopenapi v0.38.7
 )
 
@@ -21,7 +20,6 @@ require (
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.6 // indirect
 	golang.org/x/arch v0.0.0-20210923205945-b76863e36670 // indirect
-	golang.org/x/net v0.43.0 // indirect
 	golang.org/x/sync v0.22.0 // indirect
 	golang.org/x/sys v0.35.0 // indirect
 )

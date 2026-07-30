@@ -21,23 +21,27 @@ import (
 type WebSocketOptions struct {
 	Token          string
 	RequestTimeout time.Duration
-	// EventBuffer 已满时丢弃新事件，避免阻塞同一连接上的 API 响应。
+	// EventBuffer 是待交付事件队列大小。
 	EventBuffer int
-	DialOptions *websocket.DialOptions
-	Logger      *slog.Logger
+	// EventDeliveryTimeout 为正时，事件队列持续满到超时会终止连接。
+	EventDeliveryTimeout time.Duration
+	DialOptions          *websocket.DialOptions
+	Logger               *slog.Logger
 }
 
 // WebSocketCaller 使用 OneBot WebSocket action 模型调用 NapCat。
 type WebSocketCaller struct {
-	conn           *websocket.Conn
-	requestTimeout time.Duration
-	events         chan event.Event
-	pending        map[string]chan []byte
-	pendingMu      sync.Mutex
-	closed         chan struct{}
-	closeOnce      sync.Once
-	seq            atomic.Int64
-	logger         *slog.Logger
+	conn                 *websocket.Conn
+	requestTimeout       time.Duration
+	eventDeliveryTimeout time.Duration
+	events               chan event.Event
+	pending              map[string]chan []byte
+	stateMu              sync.Mutex
+	terminalErr          error
+	closed               chan struct{}
+	terminateOnce        sync.Once
+	seq                  atomic.Int64
+	logger               *slog.Logger
 }
 
 const webSocketReadLimit = 64 << 20
@@ -83,12 +87,13 @@ func NewWebSocketCaller(conn *websocket.Conn, opts WebSocketOptions) *WebSocketC
 		timeout = 30 * time.Second
 	}
 	c := &WebSocketCaller{
-		conn:           conn,
-		requestTimeout: timeout,
-		events:         make(chan event.Event, eventBuffer),
-		pending:        make(map[string]chan []byte),
-		closed:         make(chan struct{}),
-		logger:         opts.Logger,
+		conn:                 conn,
+		requestTimeout:       timeout,
+		eventDeliveryTimeout: opts.EventDeliveryTimeout,
+		events:               make(chan event.Event, eventBuffer),
+		pending:              make(map[string]chan []byte),
+		closed:               make(chan struct{}),
+		logger:               opts.Logger,
 	}
 	conn.SetReadLimit(webSocketReadLimit)
 	go c.readLoop()
@@ -117,6 +122,9 @@ func (c *WebSocketCaller) Call(ctx context.Context, action string, params any, r
 		return fmt.Errorf("编码 WebSocket 请求失败: %w", err)
 	}
 	if err := c.conn.Write(waitCtx, websocket.MessageText, payload); err != nil {
+		if terminalErr := c.Err(); terminalErr != nil {
+			return terminalErr
+		}
 		if errors.Is(waitCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
 			return errorsx.ErrTimeout
 		}
@@ -127,33 +135,48 @@ func (c *WebSocketCaller) Call(ctx context.Context, action string, params any, r
 	case raw := <-respCh:
 		return decodeEnvelope(action, raw, result)
 	case <-waitCtx.Done():
+		select {
+		case raw := <-respCh:
+			return decodeEnvelope(action, raw, result)
+		default:
+		}
 		if errors.Is(waitCtx.Err(), context.DeadlineExceeded) && ctx.Err() == nil {
 			return errorsx.ErrTimeout
 		}
 		return waitCtx.Err()
 	case <-c.closed:
-		return errorsx.ErrClosed
+		select {
+		case raw := <-respCh:
+			return decodeEnvelope(action, raw, result)
+		default:
+		}
+		return c.Err()
 	}
 }
 
 // Close 关闭连接并唤醒所有 pending 调用。
 func (c *WebSocketCaller) Close() error {
-	var err error
-	c.closeOnce.Do(func() {
-		c.pendingMu.Lock()
-		close(c.closed)
-		c.pendingMu.Unlock()
-		err = c.conn.Close(websocket.StatusNormalClosure, "")
-	})
-	return err
+	return c.terminate(errorsx.ErrClosed, false)
+}
+
+// CloseNow 不等待关闭握手，立即关闭连接。
+func (c *WebSocketCaller) CloseNow() error {
+	return c.terminate(errorsx.ErrClosed, true)
+}
+
+// Err 返回连接的首次终止原因，连接运行中返回 nil。
+func (c *WebSocketCaller) Err() error {
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
+	return c.terminalErr
 }
 
 func (c *WebSocketCaller) addPending(echo string, ch chan []byte) error {
-	c.pendingMu.Lock()
-	defer c.pendingMu.Unlock()
+	c.stateMu.Lock()
+	defer c.stateMu.Unlock()
 	select {
 	case <-c.closed:
-		return errorsx.ErrClosed
+		return c.terminalErr
 	default:
 	}
 	c.pending[echo] = ch
@@ -161,47 +184,104 @@ func (c *WebSocketCaller) addPending(echo string, ch chan []byte) error {
 }
 
 func (c *WebSocketCaller) removePending(echo string) {
-	c.pendingMu.Lock()
+	c.stateMu.Lock()
 	delete(c.pending, echo)
-	c.pendingMu.Unlock()
+	c.stateMu.Unlock()
 }
 
 func (c *WebSocketCaller) readLoop() {
 	defer close(c.events)
-	defer c.Close()
 	for {
 		_, data, err := c.conn.Read(context.Background())
 		if err != nil {
+			c.terminate(webSocketReadError(err), true)
 			return
 		}
 		var probe echoProbe
 		if err := json.Unmarshal(data, &probe); err == nil && probe.Echo != "" {
-			c.pendingMu.Lock()
-			ch := c.pending[probe.Echo]
-			c.pendingMu.Unlock()
-			if ch != nil {
-				select {
-				case ch <- data:
-				default:
+			c.stateMu.Lock()
+			select {
+			case <-c.closed:
+			default:
+				if ch := c.pending[probe.Echo]; ch != nil {
+					select {
+					case ch <- data:
+					default:
+					}
 				}
 			}
+			c.stateMu.Unlock()
 			continue
 		}
-		ev, err := event.Parse(data)
-		if err != nil {
+		ev := event.Parse(data)
+		if failure, ok := ev.(event.ParseFailure); ok {
 			if c.logger != nil {
-				c.logger.Warn("无法解析 NapCat WebSocket 消息", "error", err)
+				c.logger.Warn("无法强类型解析 NapCat WebSocket 事件，已保留原始事件", "error", failure.ParseError())
 			}
-			continue
 		}
-		select {
-		case c.events <- ev:
-		case <-c.closed:
+		if !c.enqueueEvent(ev) {
 			return
-		default:
-			if c.logger != nil {
-				c.logger.Warn("NapCat 事件缓冲区已满，丢弃事件", "post_type", ev.PostType())
-			}
 		}
 	}
+}
+
+func (c *WebSocketCaller) enqueueEvent(ev event.Event) bool {
+	select {
+	case c.events <- ev:
+		return true
+	case <-c.closed:
+		return false
+	default:
+	}
+
+	if c.eventDeliveryTimeout <= 0 {
+		if c.logger != nil {
+			c.logger.Warn("NapCat 事件缓冲区已满，丢弃事件", "post_type", ev.PostType())
+		}
+		return true
+	}
+
+	timer := time.NewTimer(c.eventDeliveryTimeout)
+	defer timer.Stop()
+	select {
+	case c.events <- ev:
+		return true
+	case <-c.closed:
+		return false
+	case <-timer.C:
+		if c.logger != nil {
+			c.logger.Warn("NapCat 事件交付超时，终止连接", "timeout", c.eventDeliveryTimeout)
+		}
+		c.terminate(errorsx.ErrEventBackpressure, true)
+		return false
+	}
+}
+
+func (c *WebSocketCaller) terminate(cause error, immediate bool) error {
+	won := false
+	c.terminateOnce.Do(func() {
+		won = true
+		c.stateMu.Lock()
+		c.terminalErr = cause
+		close(c.closed)
+		c.stateMu.Unlock()
+	})
+	if !won {
+		if immediate {
+			return c.conn.CloseNow()
+		}
+		return nil
+	}
+	if immediate {
+		return c.conn.CloseNow()
+	}
+	return c.conn.Close(websocket.StatusNormalClosure, "")
+}
+
+func webSocketReadError(err error) error {
+	status := websocket.CloseStatus(err)
+	if status == websocket.StatusNormalClosure || status == websocket.StatusGoingAway {
+		return errorsx.ErrClosed
+	}
+	return &errorsx.TransportError{Op: "websocket read", Err: err}
 }

@@ -8,6 +8,9 @@ var ErrClosed = errorsx.ErrClosed
 // ErrTimeout 表示请求等待响应超时。
 var ErrTimeout = errorsx.ErrTimeout
 
+// ErrEventBackpressure 表示事件消费者持续无法接收事件。
+var ErrEventBackpressure = errorsx.ErrEventBackpressure
+
 // TransportError 表示 HTTP 或 WebSocket 传输层失败。
 type TransportError = errorsx.TransportError
 

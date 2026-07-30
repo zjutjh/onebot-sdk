@@ -1,46 +1,42 @@
 package transport
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
+	"net/http"
 	"strings"
 	"time"
 
-	"github.com/go-resty/resty/v2"
 	"github.com/zjutjh/napcat-sdk/internal/errorsx"
 	json "github.com/zjutjh/napcat-sdk/internal/jsonx"
 )
 
 // HTTPOptions 配置 HTTP 调用器。
 type HTTPOptions struct {
-	Token       string
-	Timeout     time.Duration
-	RetryCount  int
-	RetryWait   time.Duration
-	RestyClient *resty.Client
+	Token   string
+	Timeout time.Duration
+	Client  *http.Client
 }
 
 // HTTPCaller 使用 NapCat HTTP API 调用 action。
 type HTTPCaller struct {
 	baseURL string
 	token   string
-	client  *resty.Client
+	client  *http.Client
 }
 
 // NewHTTPCaller 创建 HTTP 调用器。
 func NewHTTPCaller(baseURL string, opts HTTPOptions) *HTTPCaller {
-	client := opts.RestyClient
+	client := opts.Client
 	if client == nil {
-		client = resty.New()
+		client = &http.Client{Timeout: opts.Timeout}
 	}
-	if opts.Timeout > 0 {
-		client.SetTimeout(opts.Timeout)
-	}
-	if opts.RetryCount > 0 {
-		client.SetRetryCount(opts.RetryCount)
-	}
-	if opts.RetryWait > 0 {
-		client.SetRetryWaitTime(opts.RetryWait)
+	if opts.Timeout > 0 && client.Timeout != opts.Timeout {
+		clone := *client
+		clone.Timeout = opts.Timeout
+		client = &clone
 	}
 	return &HTTPCaller{
 		baseURL: strings.TrimRight(baseURL, "/"),
@@ -65,21 +61,26 @@ func (c *HTTPCaller) Call(ctx context.Context, action string, params any, result
 		return fmt.Errorf("编码 HTTP 请求失败: %w", err)
 	}
 
-	req := c.client.R().
-		SetContext(ctx).
-		SetHeader("Content-Type", "application/json").
-		SetBody(body)
-	if c.token != "" {
-		req.SetHeader("Authorization", "Bearer "+c.token)
-	}
-
-	resp, err := req.Post(c.baseURL + "/" + strings.TrimLeft(action, "/"))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.baseURL+"/"+strings.TrimLeft(action, "/"), bytes.NewReader(body))
 	if err != nil {
 		return &errorsx.TransportError{Op: action, Err: err}
 	}
-	raw := append([]byte(nil), resp.Body()...)
-	if resp.StatusCode() < 200 || resp.StatusCode() >= 300 {
-		return &errorsx.TransportError{Op: action, Status: resp.StatusCode(), Body: raw}
+	req.Header.Set("Content-Type", "application/json")
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+
+	resp, err := c.client.Do(req)
+	if err != nil {
+		return &errorsx.TransportError{Op: action, Err: err}
+	}
+	defer resp.Body.Close()
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return &errorsx.TransportError{Op: action, Status: resp.StatusCode, Err: err}
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return &errorsx.TransportError{Op: action, Status: resp.StatusCode, Body: raw}
 	}
 
 	return decodeEnvelope(action, raw, result)
