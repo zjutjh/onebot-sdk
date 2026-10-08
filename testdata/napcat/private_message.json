@@ -1,0 +1,15 @@
+{
+  "time": 1730000010,
+  "self_id": 10000,
+  "post_type": "message",
+  "message_type": "private",
+  "sub_type": "friend",
+  "message_id": 987654321,
+  "message_seq": 9,
+  "user_id": 20002,
+  "target_id": 20002,
+  "message": [{"type": "text", "data": {"text": "在吗"}}],
+  "raw_message": "在吗",
+  "font": 0,
+  "sender": {"user_id": 20002, "nickname": "Bob", "sex": "male", "age": 20}
+}

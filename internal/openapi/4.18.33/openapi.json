@@ -3,7 +3,7 @@
   "info": {
     "title": "NapCat OneBot 11 HTTP API",
     "description": "NapCatOneBot11 HTTP POST 接口文档",
-    "version": "4.18.13"
+    "version": "4.18.33"
   },
   "tags": [
     {
@@ -1346,6 +1346,230 @@
                     "album_id": "album_id_1",
                     "album_name": "相册1",
                     "file": "/path/to/image.jpg"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "description": "业务数据",
+                          "type": "object"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "summary": "成功响应",
+                    "value": {
+                      "status": "ok",
+                      "retcode": 0,
+                      "data": {
+                        "result": null
+                      },
+                      "message": "",
+                      "wording": "",
+                      "stream": "normal-action"
+                    }
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/upload_images_to_qun_album": {
+      "post": {
+        "summary": "上传多张图片到群相册",
+        "deprecated": false,
+        "description": "一次上传多张图片，这些图片在群相册里显示为同一条上传",
+        "tags": [
+          "群组扩展"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "description": "群号",
+                    "type": "string"
+                  },
+                  "album_id": {
+                    "description": "相册ID",
+                    "type": "string"
+                  },
+                  "album_name": {
+                    "description": "相册名称",
+                    "type": "string"
+                  },
+                  "files": {
+                    "description": "图片路径、URL或Base64 数组，一次上传多张",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "group_id",
+                  "album_id",
+                  "album_name",
+                  "files"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "group_id": "123456",
+                    "album_id": "album_id_1",
+                    "album_name": "相册1",
+                    "files": [
+                      "/path/to/1.jpg",
+                      "/path/to/2.jpg"
+                    ]
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "description": "业务数据",
+                          "type": "object"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "summary": "成功响应",
+                    "value": {
+                      "status": "ok",
+                      "retcode": 0,
+                      "data": {
+                        "result": null
+                      },
+                      "message": "",
+                      "wording": "",
+                      "stream": "normal-action"
+                    }
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/upload_video_to_qun_album": {
+      "post": {
+        "summary": "上传视频到群相册",
+        "deprecated": false,
+        "description": "上传视频到群相册，封面自动抽取首帧（失败时使用内置默认封面）",
+        "tags": [
+          "群组扩展"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "description": "群号",
+                    "type": "string"
+                  },
+                  "album_id": {
+                    "description": "相册ID",
+                    "type": "string"
+                  },
+                  "album_name": {
+                    "description": "相册名称",
+                    "type": "string"
+                  },
+                  "file": {
+                    "description": "视频路径、URL或Base64",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group_id",
+                  "album_id",
+                  "album_name",
+                  "file"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "group_id": "123456",
+                    "album_id": "album_id_1",
+                    "album_name": "相册1",
+                    "file": "/path/to/video.mp4"
                   }
                 }
               }
@@ -2846,6 +3070,143 @@
                 "examples": {
                   "Success": {
                     "$ref": "#/components/examples/Success_Default"
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/get_group_share_link": {
+      "post": {
+        "summary": "获取群分享链接",
+        "deprecated": false,
+        "description": "通过 NTQQ 原生 getJoinGroupLink 获取群的 H5 分享/加群链接 (qm.qq.com/q/xxx 或 qun.qq.com/universal-share/share?...)",
+        "tags": [
+          "群组扩展"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "description": "群号",
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "need_short_url": {
+                    "default": true,
+                    "description": "是否返回短链 (qm.qq.com/q/xxx)，false 返回完整 universal-share 链接",
+                    "anyOf": [
+                      {
+                        "type": "boolean"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "src_id": {
+                    "default": 73,
+                    "description": "分享来源 ID",
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "additional_param": {
+                    "default": "",
+                    "description": "附加参数",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group_id"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "group_id": "123456",
+                    "need_short_url": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "description": "业务数据",
+                          "type": "object",
+                          "properties": {
+                            "url": {
+                              "description": "群分享链接",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "url"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "summary": "成功响应",
+                    "value": {
+                      "status": "ok",
+                      "retcode": 0,
+                      "data": {
+                        "url": "https://qm.qq.com/q/xxxxxxxxxx"
+                      },
+                      "message": "",
+                      "wording": "",
+                      "stream": "normal-action"
+                    }
                   },
                   "Error_1400": {
                     "$ref": "#/components/examples/Error_1400"
@@ -5470,6 +5831,499 @@
                               "rank"
                             ]
                           }
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "$ref": "#/components/examples/Success_Default"
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/send_qzone_msg": {
+      "post": {
+        "summary": "发表QQ空间说说",
+        "deprecated": false,
+        "description": "在QQ空间(Qzone)发表说说, 支持纯文字或带(多)图, 可设置查看权限",
+        "tags": [
+          "扩展接口"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "description": "说说正文",
+                    "type": "string"
+                  },
+                  "images": {
+                    "description": "图片数组, 支持 file:// http(s):// base64:// , 自动上传",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "ugc_right": {
+                    "default": 1,
+                    "description": "查看权限: 1所有人可见 4好友可见 16部分好友可见 64仅自己可见 128部分好友不可见",
+                    "anyOf": [
+                      {
+                        "type": "number"
+                      },
+                      {
+                        "type": "string"
+                      }
+                    ]
+                  },
+                  "target_uins": {
+                    "description": "ugc_right为16/128时, 权限作用的QQ号数组",
+                    "type": "array",
+                    "items": {
+                      "anyOf": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "string"
+                        }
+                      ]
+                    }
+                  }
+                },
+                "required": [
+                  "content"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "content": "今天天气不错",
+                    "images": [],
+                    "ugc_right": 1,
+                    "target_uins": []
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "description": "业务数据",
+                          "type": "object",
+                          "properties": {
+                            "tid": {
+                              "description": "说说Tid",
+                              "type": "string"
+                            }
+                          },
+                          "required": [
+                            "tid"
+                          ]
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "summary": "成功响应",
+                    "value": {
+                      "status": "ok",
+                      "retcode": 0,
+                      "data": {
+                        "tid": "1234567890abcdef1234567890"
+                      },
+                      "message": "",
+                      "wording": "",
+                      "stream": "normal-action"
+                    }
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/delete_qzone_msg": {
+      "post": {
+        "summary": "删除QQ空间说说",
+        "deprecated": false,
+        "description": "删除QQ空间(Qzone)的一条说说, 按 tid 删除",
+        "tags": [
+          "扩展接口"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "tid": {
+                    "description": "说说 tid (来自 get_qzone_msg_list / send_qzone_msg)",
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tid"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "tid": "1234567890abcdef1234567890"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "type": "null",
+                          "description": "业务数据"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "$ref": "#/components/examples/Success_Default"
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/set_group_member_invite_policy": {
+      "post": {
+        "summary": "设置群成员邀请策略",
+        "deprecated": false,
+        "description": "设置是否允许群成员邀请好友进群，以及邀请是否需要管理员审核",
+        "tags": [
+          "群组接口"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "description": "群号",
+                    "type": "string"
+                  },
+                  "policy": {
+                    "description": "成员邀请策略：禁止、需要管理员审核、无需审核、群成员少于100人时无需审核",
+                    "enum": [
+                      "disabled",
+                      "require_approval",
+                      "no_approval",
+                      "no_approval_under_100"
+                    ],
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "group_id",
+                  "policy"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "group_id": "123456",
+                    "policy": "require_approval"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "description": "业务数据",
+                          "type": "null"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "$ref": "#/components/examples/Success_Default"
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/set_group_member_permissions": {
+      "post": {
+        "summary": "设置群成员功能权限",
+        "deprecated": false,
+        "description": "设置群成员上传相册、发起临时会话和发起新群聊的权限；未传入的项目保持不变",
+        "tags": [
+          "群组接口"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "description": "群号",
+                    "type": "string"
+                  },
+                  "allow_member_upload_album": {
+                    "description": "允许成员上传群相册",
+                    "type": "boolean"
+                  },
+                  "allow_member_temporary_session": {
+                    "description": "允许成员发起临时会话",
+                    "type": "boolean"
+                  },
+                  "allow_member_create_group": {
+                    "description": "允许成员发起新的群聊",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "group_id"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "group_id": "123456",
+                    "allow_member_upload_album": true,
+                    "allow_member_temporary_session": true,
+                    "allow_member_create_group": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "description": "业务数据",
+                          "type": "null"
+                        }
+                      }
+                    }
+                  ]
+                },
+                "examples": {
+                  "Success": {
+                    "$ref": "#/components/examples/Success_Default"
+                  },
+                  "Error_1400": {
+                    "$ref": "#/components/examples/Error_1400"
+                  },
+                  "Error_1401": {
+                    "$ref": "#/components/examples/Error_1401"
+                  },
+                  "Error_1404": {
+                    "$ref": "#/components/examples/Error_1404"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": []
+      }
+    },
+    "/set_group_new_member_history_visibility": {
+      "post": {
+        "summary": "设置新成员历史消息可见性",
+        "deprecated": false,
+        "description": "设置新入群成员默认是否可以查看最近聊天记录",
+        "tags": [
+          "群组接口"
+        ],
+        "parameters": [],
+        "requestBody": {
+          "description": "API 参数",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "group_id": {
+                    "description": "群号",
+                    "type": "string"
+                  },
+                  "visible": {
+                    "description": "新成员默认可见最近聊天记录",
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "group_id",
+                  "visible"
+                ]
+              },
+              "examples": {
+                "Default": {
+                  "summary": "默认请求示例",
+                  "value": {
+                    "group_id": "123456",
+                    "visible": true
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "业务响应",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/BaseResponse"
+                    },
+                    {
+                      "type": "object",
+                      "required": [
+                        "data"
+                      ],
+                      "properties": {
+                        "data": {
+                          "description": "业务数据",
+                          "type": "null"
                         }
                       }
                     }
@@ -9879,6 +10733,14 @@
                               "read_num": {
                                 "description": "阅读数",
                                 "type": "number"
+                              },
+                              "send_to_new_member": {
+                                "description": "是否为「发给新成员」公告",
+                                "type": "boolean"
+                              },
+                              "pinned": {
+                                "description": "是否置顶（仅「发给新成员」公告可读到）",
+                                "type": "boolean"
                               }
                             },
                             "required": [

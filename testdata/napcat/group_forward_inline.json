@@ -1,0 +1,20 @@
+{
+  "time": 1730000020,
+  "self_id": 10000,
+  "post_type": "message",
+  "message_type": "group",
+  "sub_type": "normal",
+  "message_id": 555000111,
+  "message_seq": 55,
+  "user_id": 20001,
+  "group_id": 30001,
+  "message": [
+    {"type": "forward", "data": {"id": "napres-1", "content": [
+      {"user_id": 20001, "sender": {"nickname": "Alice"}, "time": 1730000001, "message": [{"type": "text", "data": {"text": "内嵌第一条"}}]},
+      {"user_id": 20002, "sender": {"nickname": "Bob"}, "time": 1730000002, "content": "字符串也接受"}
+    ]}}
+  ],
+  "raw_message": "[CQ:forward,id=napres-1]",
+  "font": 0,
+  "sender": {"user_id": 20001, "nickname": "Alice", "card": "", "role": "member"}
+}

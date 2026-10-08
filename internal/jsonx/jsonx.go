@@ -2,6 +2,7 @@
 package jsonx
 
 import (
+	"bytes"
 	stdjson "encoding/json"
 
 	"github.com/bytedance/sonic"
@@ -9,6 +10,12 @@ import (
 
 // RawMessage 延迟解析一段 JSON。
 type RawMessage = stdjson.RawMessage
+
+// IsNull 判断一段原始 JSON 是否缺失或为 null,用于区分"有数据"与"显式置空"。
+func IsNull(raw RawMessage) bool {
+	trimmed := bytes.TrimSpace(raw)
+	return len(trimmed) == 0 || string(trimmed) == "null"
+}
 
 // Marshal 使用 Sonic 的标准库兼容配置编码 JSON。
 func Marshal(value any) ([]byte, error) {

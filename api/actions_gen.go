@@ -1,4 +1,4 @@
-// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.13 生成；请勿手动修改。
+// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.33 生成，请勿手动修改.
 
 package api
 
@@ -70,6 +70,8 @@ const (
 	ActionDeleteGroupFolder Action = "delete_group_folder"
 	// ActionDeleteMsg 撤回消息
 	ActionDeleteMsg Action = "delete_msg"
+	// ActionDeleteQzoneMsg 删除QQ空间说说
+	ActionDeleteQzoneMsg Action = "delete_qzone_msg"
 	// ActionDoGroupAlbumComment 发表群相册评论
 	ActionDoGroupAlbumComment Action = "do_group_album_comment"
 	// ActionDownloadFile 下载文件
@@ -166,6 +168,8 @@ const (
 	ActionGetGroupMsgHistory Action = "get_group_msg_history"
 	// ActionGetGroupRootFiles 获取群根目录文件列表
 	ActionGetGroupRootFiles Action = "get_group_root_files"
+	// ActionGetGroupShareLink 获取群分享链接
+	ActionGetGroupShareLink Action = "get_group_share_link"
 	// ActionGetGroupShutList 获取群禁言列表
 	ActionGetGroupShutList Action = "get_group_shut_list"
 	// ActionGetGroupSignedList 获取群组今日打卡列表
@@ -270,6 +274,8 @@ const (
 	ActionSendPrivateForwardMsg Action = "send_private_forward_msg"
 	// ActionSendPrivateMsg 发送私聊消息
 	ActionSendPrivateMsg Action = "send_private_msg"
+	// ActionSendQzoneMsg 发表QQ空间说说
+	ActionSendQzoneMsg Action = "send_qzone_msg"
 	// ActionSetCustomFaceDesc 修改自定义表情描述
 	ActionSetCustomFaceDesc Action = "set_custom_face_desc"
 	// ActionSetDiyOnlineStatus 设置自定义在线状态
@@ -300,8 +306,14 @@ const (
 	ActionSetGroupKickMembers Action = "set_group_kick_members"
 	// ActionSetGroupLeave 退出群组
 	ActionSetGroupLeave Action = "set_group_leave"
+	// ActionSetGroupMemberInvitePolicy 设置群成员邀请策略
+	ActionSetGroupMemberInvitePolicy Action = "set_group_member_invite_policy"
+	// ActionSetGroupMemberPermissions 设置群成员功能权限
+	ActionSetGroupMemberPermissions Action = "set_group_member_permissions"
 	// ActionSetGroupName 设置群名称
 	ActionSetGroupName Action = "set_group_name"
+	// ActionSetGroupNewMemberHistoryVisibility 设置新成员历史消息可见性
+	ActionSetGroupNewMemberHistoryVisibility Action = "set_group_new_member_history_visibility"
 	// ActionSetGroupPortrait 设置群头像
 	ActionSetGroupPortrait Action = "set_group_portrait"
 	// ActionSetGroupRemark 设置群备注
@@ -344,6 +356,10 @@ const (
 	ActionUploadGroupFile Action = "upload_group_file"
 	// ActionUploadImageToQunAlbum 上传图片到群相册
 	ActionUploadImageToQunAlbum Action = "upload_image_to_qun_album"
+	// ActionUploadImagesToQunAlbum 上传多张图片到群相册
+	ActionUploadImagesToQunAlbum Action = "upload_images_to_qun_album"
 	// ActionUploadPrivateFile 上传私聊文件
 	ActionUploadPrivateFile Action = "upload_private_file"
+	// ActionUploadVideoToQunAlbum 上传视频到群相册
+	ActionUploadVideoToQunAlbum Action = "upload_video_to_qun_album"
 )

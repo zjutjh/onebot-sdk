@@ -23,6 +23,10 @@ import (
 	"github.com/pb33f/libopenapi/orderedmap"
 )
 
+// headerFormat 是三种生成文件共用的标头文案,由 libopenapi 和 writeHeader 各自渲染。
+// 必须以半角句点收尾:libopenapi 会给不以 "." 结尾的注释行自动补 ".",写成"。"会渲染出多余句点。
+const headerFormat = "代码由 napcatgen 根据 NapCat OpenAPI %s 生成，请勿手动修改."
+
 // GenerateFromFile 从 OpenAPI spec 生成 API 代码。
 func GenerateFromFile(specPath string, outDir string) error {
 	data, err := os.ReadFile(specPath)
@@ -240,7 +244,7 @@ func generateModels(schemas *orderedmap.Map[string, *highbase.SchemaProxy], vers
 	generator := gogen.NewGenerator(
 		gogen.WithPackageName("api"),
 		gogen.WithGeneratedComment(true),
-		gogen.WithHeaderComment(fmt.Sprintf("代码由 napcatgen 根据 NapCat OpenAPI %s 生成；请勿手动修改。", version)),
+		gogen.WithHeaderComment(fmt.Sprintf(headerFormat, version)),
 		gogen.WithNestedTypeNameDelimiter(""),
 		gogen.WithTypeNameResolver(ToExportedName),
 		gogen.WithEnumConstants(true),
@@ -283,7 +287,7 @@ func redirectJSONImport(source []byte) ([]byte, error) {
 		}
 		if path == "encoding/json" {
 			spec.Name = ast.NewIdent("json")
-			spec.Path.Value = strconv.Quote("github.com/zjutjh/napcat-sdk/internal/jsonx")
+			spec.Path.Value = strconv.Quote("github.com/zjutjh/onebot-sdk/internal/jsonx")
 		}
 	}
 	var out bytes.Buffer
@@ -327,7 +331,7 @@ func generateClient(actions []actionSpec, version string) []byte {
 }
 
 func writeHeader(b *bytes.Buffer, version string) {
-	fmt.Fprintf(b, "// 代码由 napcatgen 根据 NapCat OpenAPI %s 生成；请勿手动修改。\n\n", version)
+	fmt.Fprintf(b, "// "+headerFormat+"\n\n", version)
 }
 
 func writeComment(b *bytes.Buffer, name string, text string) {

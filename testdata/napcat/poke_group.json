@@ -1,0 +1,12 @@
+{
+  "time": 1730000030,
+  "self_id": 10000,
+  "post_type": "notice",
+  "notice_type": "notify",
+  "sub_type": "poke",
+  "group_id": 30001,
+  "user_id": 20001,
+  "target_id": 10000,
+  "action": "戳一戳",
+  "suffix": ""
+}

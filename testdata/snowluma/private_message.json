@@ -1,0 +1,14 @@
+{
+  "time": 1730000110,
+  "self_id": 10000,
+  "post_type": "message",
+  "message_type": "private",
+  "sub_type": "friend",
+  "message_id": -987654321,
+  "message_seq": 7,
+  "user_id": 20005,
+  "message": [{"type": "text", "data": {"text": "在忙吗"}}],
+  "raw_message": "在忙吗",
+  "font": 0,
+  "sender": {"user_id": 20005, "nickname": "Eve"}
+}

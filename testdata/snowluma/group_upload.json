@@ -1,0 +1,9 @@
+{
+  "time": 1730000150,
+  "self_id": 10000,
+  "post_type": "notice",
+  "notice_type": "group_upload",
+  "group_id": 30002,
+  "user_id": 20004,
+  "file": {"id": "file-1", "name": "合并转发.json", "size": 1234, "busid": 102}
+}

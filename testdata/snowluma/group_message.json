@@ -1,0 +1,18 @@
+{
+  "time": 1730000100,
+  "self_id": 10000,
+  "post_type": "message",
+  "message_type": "group",
+  "sub_type": "normal",
+  "message_id": -1234567890,
+  "message_seq": 42,
+  "user_id": 20004,
+  "group_id": 30002,
+  "message": [
+    {"type": "at", "data": {"qq": "10000"}},
+    {"type": "text", "data": {"text": " 你好"}}
+  ],
+  "raw_message": "@Mumu 你好",
+  "font": 0,
+  "sender": {"user_id": 20004, "nickname": "Dan", "card": "", "role": "member"}
+}

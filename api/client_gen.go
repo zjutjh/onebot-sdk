@@ -1,4 +1,4 @@
-// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.13 生成；请勿手动修改。
+// 代码由 napcatgen 根据 NapCat OpenAPI 4.18.33 生成，请勿手动修改.
 
 package api
 
@@ -287,6 +287,15 @@ func (c *Client) DeleteGroupFolder(ctx context.Context, req DeleteGroupFolderReq
 func (c *Client) DeleteMsg(ctx context.Context, req DeleteMsgRequest) (*DeleteMsgResponse, error) {
 	var out DeleteMsgResponse
 	if err := c.caller.Call(ctx, string(ActionDeleteMsg), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// DeleteQzoneMsg 删除QQ空间说说
+func (c *Client) DeleteQzoneMsg(ctx context.Context, req DeleteQzoneMsgRequest) (*DeleteQzoneMsgResponse, error) {
+	var out DeleteQzoneMsgResponse
+	if err := c.caller.Call(ctx, string(ActionDeleteQzoneMsg), req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -719,6 +728,15 @@ func (c *Client) GetGroupMsgHistory(ctx context.Context, req GetGroupMsgHistoryR
 func (c *Client) GetGroupRootFiles(ctx context.Context, req GetGroupRootFilesRequest) (*GetGroupRootFilesResponse, error) {
 	var out GetGroupRootFilesResponse
 	if err := c.caller.Call(ctx, string(ActionGetGroupRootFiles), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetGroupShareLink 获取群分享链接
+func (c *Client) GetGroupShareLink(ctx context.Context, req GetGroupShareLinkRequest) (*GetGroupShareLinkResponse, error) {
+	var out GetGroupShareLinkResponse
+	if err := c.caller.Call(ctx, string(ActionGetGroupShareLink), req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -1192,6 +1210,15 @@ func (c *Client) SendPrivateMsg(ctx context.Context, req SendPrivateMsgRequest) 
 	return &out, nil
 }
 
+// SendQzoneMsg 发表QQ空间说说
+func (c *Client) SendQzoneMsg(ctx context.Context, req SendQzoneMsgRequest) (*SendQzoneMsgResponse, error) {
+	var out SendQzoneMsgResponse
+	if err := c.caller.Call(ctx, string(ActionSendQzoneMsg), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // SetCustomFaceDesc 修改自定义表情描述
 func (c *Client) SetCustomFaceDesc(ctx context.Context, req SetCustomFaceDescRequest) (*SetCustomFaceDescResponse, error) {
 	var out SetCustomFaceDescResponse
@@ -1327,10 +1354,37 @@ func (c *Client) SetGroupLeave(ctx context.Context, req SetGroupLeaveRequest) (*
 	return &out, nil
 }
 
+// SetGroupMemberInvitePolicy 设置群成员邀请策略
+func (c *Client) SetGroupMemberInvitePolicy(ctx context.Context, req SetGroupMemberInvitePolicyRequest) (*SetGroupMemberInvitePolicyResponse, error) {
+	var out SetGroupMemberInvitePolicyResponse
+	if err := c.caller.Call(ctx, string(ActionSetGroupMemberInvitePolicy), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetGroupMemberPermissions 设置群成员功能权限
+func (c *Client) SetGroupMemberPermissions(ctx context.Context, req SetGroupMemberPermissionsRequest) (*SetGroupMemberPermissionsResponse, error) {
+	var out SetGroupMemberPermissionsResponse
+	if err := c.caller.Call(ctx, string(ActionSetGroupMemberPermissions), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // SetGroupName 设置群名称
 func (c *Client) SetGroupName(ctx context.Context, req SetGroupNameRequest) (*SetGroupNameResponse, error) {
 	var out SetGroupNameResponse
 	if err := c.caller.Call(ctx, string(ActionSetGroupName), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// SetGroupNewMemberHistoryVisibility 设置新成员历史消息可见性
+func (c *Client) SetGroupNewMemberHistoryVisibility(ctx context.Context, req SetGroupNewMemberHistoryVisibilityRequest) (*SetGroupNewMemberHistoryVisibilityResponse, error) {
+	var out SetGroupNewMemberHistoryVisibilityResponse
+	if err := c.caller.Call(ctx, string(ActionSetGroupNewMemberHistoryVisibility), req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -1525,10 +1579,28 @@ func (c *Client) UploadImageToQunAlbum(ctx context.Context, req UploadImageToQun
 	return &out, nil
 }
 
+// UploadImagesToQunAlbum 上传多张图片到群相册
+func (c *Client) UploadImagesToQunAlbum(ctx context.Context, req UploadImagesToQunAlbumRequest) (*UploadImagesToQunAlbumResponse, error) {
+	var out UploadImagesToQunAlbumResponse
+	if err := c.caller.Call(ctx, string(ActionUploadImagesToQunAlbum), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
 // UploadPrivateFile 上传私聊文件
 func (c *Client) UploadPrivateFile(ctx context.Context, req UploadPrivateFileRequest) (*UploadPrivateFileResponse, error) {
 	var out UploadPrivateFileResponse
 	if err := c.caller.Call(ctx, string(ActionUploadPrivateFile), req, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// UploadVideoToQunAlbum 上传视频到群相册
+func (c *Client) UploadVideoToQunAlbum(ctx context.Context, req UploadVideoToQunAlbumRequest) (*UploadVideoToQunAlbumResponse, error) {
+	var out UploadVideoToQunAlbumResponse
+	if err := c.caller.Call(ctx, string(ActionUploadVideoToQunAlbum), req, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil

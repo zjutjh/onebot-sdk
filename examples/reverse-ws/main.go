@@ -6,10 +6,10 @@ import (
 	"os/signal"
 	"strconv"
 
-	napcat "github.com/zjutjh/napcat-sdk"
-	"github.com/zjutjh/napcat-sdk/api"
-	"github.com/zjutjh/napcat-sdk/event"
-	"github.com/zjutjh/napcat-sdk/message"
+	"github.com/zjutjh/onebot-sdk"
+	"github.com/zjutjh/onebot-sdk/api"
+	"github.com/zjutjh/onebot-sdk/event"
+	"github.com/zjutjh/onebot-sdk/message"
 )
 
 func main() {
@@ -20,7 +20,7 @@ func main() {
 		panic(err)
 	}
 
-	err = napcat.ServeReverseWebSocket(ctx, ":8080", func(client *napcat.Client) {
+	err = onebot.ServeReverseWebSocket(ctx, ":8080", func(client *onebot.Client) {
 		for ev := range client.Events() {
 			switch e := ev.(type) {
 			case *event.PrivateMessage:
@@ -34,7 +34,7 @@ func main() {
 				})
 			}
 		}
-	}, napcat.WithToken(os.Getenv("NAPCAT_TOKEN")))
+	}, onebot.WithToken(os.Getenv("ONEBOT_TOKEN")))
 	if err != nil {
 		panic(err)
 	}

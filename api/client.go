@@ -1,4 +1,4 @@
-//go:generate go run ../cmd/napcatgen -spec ../internal/openapi/4.18.13/openapi.json -out .
+//go:generate go run ../cmd/napcatgen -spec ../internal/openapi/4.18.33/openapi.json -out .
 
 // Package api 提供生成 API 方法共享的运行时类型。
 package api
@@ -6,8 +6,8 @@ package api
 import (
 	"context"
 
-	json "github.com/zjutjh/napcat-sdk/internal/jsonx"
-	"github.com/zjutjh/napcat-sdk/transport"
+	json "github.com/zjutjh/onebot-sdk/internal/jsonx"
+	"github.com/zjutjh/onebot-sdk/transport"
 )
 
 // Client 调用 NapCat action。强类型方法由生成代码补充。

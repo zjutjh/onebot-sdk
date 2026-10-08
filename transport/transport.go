@@ -1,4 +1,4 @@
-// Package transport 提供 NapCat API 调用的底层传输抽象。
+// Package transport 提供 OneBot action 调用的底层传输抽象。
 package transport
 
 import "context"

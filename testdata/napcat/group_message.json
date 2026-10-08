@@ -1,0 +1,23 @@
+{
+  "time": 1730000000,
+  "self_id": 10000,
+  "post_type": "message",
+  "message_type": "group",
+  "sub_type": "normal",
+  "message_id": 1234567890,
+  "message_seq": 41,
+  "user_id": 20001,
+  "group_id": 30001,
+  "message": [
+    {"type": "reply", "data": {"id": 1234567889}},
+    {"type": "at", "data": {"qq": "all"}},
+    {"type": "text", "data": {"text": " 早上好"}},
+    {"type": "image", "data": {"file": "abc.jpg", "sub_type": "0", "url": "https://example.com/abc.jpg", "summary": "一张图片"}},
+    {"type": "mface", "data": {"emoji_package_id": 1, "emoji_id": "2", "key": "k", "summary": "[表情]"}},
+    {"type": "face", "data": {"id": "178"}},
+    {"type": "unknown_future", "data": {"foo": "bar"}}
+  ],
+  "raw_message": "[CQ:at,qq=all] 早上好[CQ:image,file=abc.jpg]",
+  "font": 0,
+  "sender": {"user_id": 20001, "nickname": "Alice", "card": "爱丽丝", "role": "admin", "sex": "female", "age": 18}
+}

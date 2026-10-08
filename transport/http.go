@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zjutjh/napcat-sdk/internal/errorsx"
-	json "github.com/zjutjh/napcat-sdk/internal/jsonx"
+	"github.com/zjutjh/onebot-sdk/internal/errorsx"
+	json "github.com/zjutjh/onebot-sdk/internal/jsonx"
 )
 
 // HTTPOptions 配置 HTTP 调用器。
@@ -20,7 +20,7 @@ type HTTPOptions struct {
 	Client  *http.Client
 }
 
-// HTTPCaller 使用 NapCat HTTP API 调用 action。
+// HTTPCaller 使用 OneBot HTTP API 调用 action。
 type HTTPCaller struct {
 	baseURL string
 	token   string
@@ -51,10 +51,9 @@ type envelope struct {
 	Data    json.RawMessage `json:"data"`
 	Message string          `json:"message"`
 	Wording string          `json:"wording"`
-	Echo    string          `json:"echo,omitempty"`
 }
 
-// Call 通过 HTTP POST 调用一个 NapCat action。
+// Call 通过 HTTP POST 调用一个 action。
 func (c *HTTPCaller) Call(ctx context.Context, action string, params any, result any) error {
 	body, err := json.Marshal(params)
 	if err != nil {
@@ -104,7 +103,7 @@ func decodeEnvelope(action string, raw []byte, result any) error {
 			Raw:     raw,
 		}
 	}
-	if result == nil || len(env.Data) == 0 || string(env.Data) == "null" {
+	if result == nil || json.IsNull(env.Data) {
 		return nil
 	}
 	if err := json.Unmarshal(env.Data, result); err != nil {

@@ -1,0 +1,13 @@
+{
+  "time": 1730000130,
+  "self_id": 10000,
+  "post_type": "notice",
+  "notice_type": "notify",
+  "sub_type": "poke",
+  "user_id": 20005,
+  "sender_id": 20005,
+  "target_id": 10000,
+  "action": "戳一戳",
+  "suffix": "拍了拍",
+  "action_img_url": "https://example.com/poke.png"
+}
