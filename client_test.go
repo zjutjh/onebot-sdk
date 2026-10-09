@@ -138,7 +138,14 @@ func TestEventBackpressureTerminatesPendingCall(t *testing.T) {
 			return
 		}
 		frame := []byte(`{"time":1,"post_type":"notice","self_id":"1"}`)
-		for range 3 {
+		if err := conn.Write(context.Background(), websocket.MessageText, frame); err != nil {
+			return
+		}
+		// 停一拍等管线把第一帧投进用户通道后再投后续帧:
+		// 传输原始队列与用户通道共用 EventBuffer(均为 1),三帧连发在慢环境
+		// (CI)下会被传输队列整段丢弃,永远填不满用户通道,背压触发不了
+		time.Sleep(300 * time.Millisecond)
+		for range 2 {
 			if err := conn.Write(context.Background(), websocket.MessageText, frame); err != nil {
 				return
 			}
