@@ -58,7 +58,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	userID := "123456"
+	userID := message.ID(123456)
 
 	client := onebot.NewHTTPClient("http://127.0.0.1:3000", onebot.WithToken(os.Getenv("ONEBOT_TOKEN")))
 
@@ -73,7 +73,7 @@ func main() {
 		panic(err)
 	}
 	_, err = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-		UserID:  &userID,
+		UserID:  userID,
 		Message: msg,
 	})
 	if err != nil {
@@ -92,7 +92,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/zjutjh/onebot-sdk"
@@ -127,9 +126,8 @@ func main() {
 			if e.Message.Text() != "/ping" {
 				continue
 			}
-			userID := strconv.FormatInt(e.UserID.Int64(), 10)
 			_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-				UserID:  &userID,
+				UserID:  e.UserID,
 				Message: pong,
 			})
 		}
@@ -164,7 +162,7 @@ for frame := range raw {
 }
 ```
 
-与 `Events()` **并存而非二选一**：每个事件帧同时进入两者。注意：旁路在首次调用 `RawEvents()` 时才启用，**须在事件开始到达前调用**，之后才调用的帧不会被回放。旁路队列与事件队列同容量，满时丢弃旁路帧并记日志，不影响主事件流。HTTP client 返回 `nil`。
+与 `Events()` **并存而非二选一**：每个事件帧同时进入两者。注意：旁路在首次调用 `RawEvents()` 时才启用，**须在事件开始到达前调用**，之后才调用的帧不会被回放。旁路队列与事件队列同容量，满时丢弃旁路帧并记日志，不影响主事件流。HTTP client 没有事件流，`Events()` 与 `RawEvents()` 返回已关闭通道，`range` 立即结束。
 
 ## 方言门面方法
 
@@ -205,3 +203,5 @@ go generate ./...
 ```
 
 生成器读取 `internal/openapi/4.18.33/openapi.json`，把 action、client 和所有模型输出到 `api/`。生成文件头会标明“请勿手动修改”。
+
+数值 ID（`user_id`、`group_id`、`message_id`、`self_id`、`operator_id`、`sender_id`、`target_id`）在生成后统一改写为 `message.ID`：解码兼容字符串与数字两种上报形态，编码统一为数字。请求侧为值类型并保留 `omitempty`，未赋值（零值）时不出现在出向 JSON 中。

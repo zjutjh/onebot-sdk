@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/zjutjh/onebot-sdk"
 	"github.com/zjutjh/onebot-sdk/api"
@@ -13,9 +14,13 @@ import (
 func main() {
 	ctx := context.Background()
 	token := os.Getenv("ONEBOT_TOKEN")
-	userID := os.Getenv("ONEBOT_TARGET_USER_ID")
-	if userID == "" {
+	raw := os.Getenv("ONEBOT_TARGET_USER_ID")
+	if raw == "" {
 		panic("请设置 ONEBOT_TARGET_USER_ID")
+	}
+	userID, err := strconv.ParseInt(raw, 10, 64)
+	if err != nil {
+		panic(err)
 	}
 
 	client := onebot.NewHTTPClient("http://127.0.0.1:3000", onebot.WithToken(token))
@@ -31,7 +36,7 @@ func main() {
 		panic(err)
 	}
 	_, err = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-		UserID:  &userID,
+		UserID:  message.ID(userID),
 		Message: msg,
 	})
 	if err != nil {

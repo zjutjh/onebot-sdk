@@ -10,6 +10,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"reflect"
 	"regexp"
 	"sort"
 	"strconv"
@@ -143,7 +144,7 @@ func collectActions(doc *highv3.Document) ([]actionSpec, error) {
 		action := strings.TrimPrefix(path, "/")
 		actions = append(actions, actionSpec{
 			Action:         action,
-			Name:           uniqueName(ToExportedName(action), usedNames),
+			Name:           uniqueName(toExportedName(action), usedNames),
 			Summary:        item.Post.Summary,
 			RequestSchema:  requestSchema(item.Post),
 			ResponseSchema: responseSchema,
@@ -246,7 +247,7 @@ func generateModels(schemas *orderedmap.Map[string, *highbase.SchemaProxy], vers
 		gogen.WithGeneratedComment(true),
 		gogen.WithHeaderComment(fmt.Sprintf(headerFormat, version)),
 		gogen.WithNestedTypeNameDelimiter(""),
-		gogen.WithTypeNameResolver(ToExportedName),
+		gogen.WithTypeNameResolver(toExportedName),
 		gogen.WithEnumConstants(true),
 	)
 	file, err := generator.RenderSchemas(schemas)
@@ -267,19 +268,36 @@ func generateModels(schemas *orderedmap.Map[string, *highbase.SchemaProxy], vers
 		types[name] = typeName
 		i++
 	}
-	source, err := redirectJSONImport(file.Source)
+	source, err := postprocessTypes(file.Source)
 	if err != nil {
 		return nil, nil, err
 	}
 	return source, types, nil
 }
 
-func redirectJSONImport(source []byte) ([]byte, error) {
+// idFieldJSONNames 是按 OneBot 约定统一改写为 message.ID 的数值 ID 字段名;
+// message.ID 双形态解码兼容后端上报的字符串与数字,编码统一为数字。
+var idFieldJSONNames = map[string]bool{
+	"user_id":     true,
+	"group_id":    true,
+	"message_id":  true,
+	"self_id":     true,
+	"operator_id": true,
+	"sender_id":   true,
+	"target_id":   true,
+}
+
+// postprocessTypes 对生成模型做两步后处理:
+// 把 JSON 字段名命中 idFieldJSONNames 的 string/float64 字段改写为 message.ID,
+// 再把 encoding/json 重定向到内部 jsonx。message import 以文本方式插入,
+// 避免 AST 位置为空的节点在重排版时吞并相邻文档注释。
+func postprocessTypes(source []byte) ([]byte, error) {
 	fset := token.NewFileSet()
 	file, err := parser.ParseFile(fset, "types_gen.go", source, parser.ParseComments)
 	if err != nil {
 		return nil, fmt.Errorf("解析生成模型失败: %w", err)
 	}
+	changed := rewriteIDFields(file)
 	for _, spec := range file.Imports {
 		path, err := strconv.Unquote(spec.Path.Value)
 		if err != nil {
@@ -292,9 +310,72 @@ func redirectJSONImport(source []byte) ([]byte, error) {
 	}
 	var out bytes.Buffer
 	if err := format.Node(&out, fset, file); err != nil {
-		return nil, fmt.Errorf("重写生成模型 JSON import 失败: %w", err)
+		return nil, fmt.Errorf("后处理生成模型失败: %w", err)
 	}
-	return out.Bytes(), nil
+	if !changed {
+		return out.Bytes(), nil
+	}
+	const jsonImport = `import json "github.com/zjutjh/onebot-sdk/internal/jsonx"`
+	imports := `import (
+	json "github.com/zjutjh/onebot-sdk/internal/jsonx"
+
+	"github.com/zjutjh/onebot-sdk/message"
+)`
+	if bytes.Contains(out.Bytes(), []byte(jsonImport)) {
+		return bytes.Replace(out.Bytes(), []byte(jsonImport), []byte(imports), 1), nil
+	}
+	return append([]byte("package api\n\n"+imports+"\n"), out.Bytes()...), nil
+}
+
+// rewriteIDFields 把生成模型中命中 idFieldJSONNames 的字段类型统一替换为 message.ID,
+// 返回是否有字段被改写。
+// 兼容 string、*string、float64、*float64 四种原始形态,指针统一改为值类型;
+// oneOf 生成的 Union 原样透传字段不在改写范围。
+func rewriteIDFields(file *ast.File) bool {
+	changed := false
+	ast.Inspect(file, func(n ast.Node) bool {
+		st, ok := n.(*ast.StructType)
+		if !ok {
+			return true
+		}
+		for _, field := range st.Fields.List {
+			name := jsonFieldName(field.Tag)
+			if !idFieldJSONNames[name] || !isRewritableIDType(field.Type) {
+				continue
+			}
+			field.Type = &ast.SelectorExpr{X: ast.NewIdent("message"), Sel: ast.NewIdent("ID")}
+			changed = true
+		}
+		return true
+	})
+	return changed
+}
+
+// jsonFieldName 从字段的 struct tag 提取 JSON 名称,无 tag 或不含名称时返回空串。
+func jsonFieldName(tag *ast.BasicLit) string {
+	if tag == nil {
+		return ""
+	}
+	text, err := strconv.Unquote(tag.Value)
+	if err != nil {
+		return ""
+	}
+	value, _, _ := strings.Cut(reflect.StructTag(text).Get("json"), ",")
+	return value
+}
+
+// isRewritableIDType 判断字段类型是否为 string/float64 及其指针形态。
+func isRewritableIDType(expr ast.Expr) bool {
+	ident, ok := expr.(*ast.Ident)
+	if ok {
+		return ident.Name == "string" || ident.Name == "float64"
+	}
+	star, ok := expr.(*ast.StarExpr)
+	if !ok {
+		return false
+	}
+	ident, ok = star.X.(*ast.Ident)
+	return ok && (ident.Name == "string" || ident.Name == "float64")
 }
 
 func generateActions(actions []actionSpec, version string) []byte {
@@ -361,8 +442,8 @@ func uniqueName(name string, used map[string]int) string {
 	return fmt.Sprintf("%s%d", name, used[name])
 }
 
-// ToExportedName 将 action 名称转换为导出的 Go 名称。
-func ToExportedName(action string) string {
+// toExportedName 将 action 名称转换为导出的 Go 名称。
+func toExportedName(action string) string {
 	prefix := ""
 	if strings.HasPrefix(action, ".") {
 		prefix = "Dot"

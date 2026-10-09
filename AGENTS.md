@@ -33,7 +33,7 @@
 - 读循环永不阻塞：它是 action(echo) 响应唯一的路由方，阻塞会让在途调用（含管线自身的补拉 API 往返）永远等不到响应。因此传输层到管线这一跳固定为非阻塞投递，队列满一律丢弃并记日志；`TakeRawEvents()` 返回的主队列由管线唯一消费。
 - 背压只在管线到用户这一跳（`deliverEvent`）：事件队列必须有界；未配置 `WithEventDeliveryTimeout` 时队列满丢弃新事件并记日志，配置正数超时后用户持续不消费以 `ErrEventBackpressure` 终止连接。方言补拉的 API 往返不计入交付超时。
 - `RawEvents()` 是旁路（transport 的 `TeeRawEvents`）：与 `Events()` 并存，每帧复制一份；首次调用才启用，须在事件到达前调用，之后不回放；旁路队列满丢弃并记日志，不影响主事件流。禁止把管线消费者切换到旁路通道。
-- 生成 API 以正确反映官方 schema 为先，不为旧生成结果保留兼容层。
+- 生成 API 以正确反映官方 schema 为先，不为旧生成结果保留兼容层。数值 ID（user_id/group_id/message_id/self_id/operator_id/sender_id/target_id）在生成后处理中统一改写为 `message.ID` 值类型（解码兼容字符串与数字，编码为数字），改写规则维护在 `internal/gen` 的 `idFieldJSONNames`。
 - message_id 只做等值比较，禁止排序、范围比较或当水位用（两端数值语义不可比：NapCat 31 位正数 vs SnowLuma 有符号 int32）。
 - 禁止照抄 SnowLuma 源码中的 schema 描述文案（源码可见非商业许可），文档自写。
 - 文档与注释使用中文，Go 标识符和实现遵循标准 Go 风格。

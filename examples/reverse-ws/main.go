@@ -4,7 +4,6 @@ import (
 	"context"
 	"os"
 	"os/signal"
-	"strconv"
 
 	"github.com/zjutjh/onebot-sdk"
 	"github.com/zjutjh/onebot-sdk/api"
@@ -27,9 +26,8 @@ func main() {
 				if e.Message.Text() != "/ping" {
 					continue
 				}
-				userID := strconv.FormatInt(e.UserID.Int64(), 10)
 				_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-					UserID:  &userID,
+					UserID:  e.UserID,
 					Message: pong,
 				})
 			}

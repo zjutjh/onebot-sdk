@@ -47,6 +47,10 @@ type options struct {
 // dialectDetectTimeout 限制 get_version_info 方言检测的耗时。
 const dialectDetectTimeout = 5 * time.Second
 
+// defaultEventBuffer 是未配置 WithEventBuffer 时事件队列的默认容量;
+// transport 包对直接构造的调用方另持同值兜底,正常路径经根包统一传入。
+const defaultEventBuffer = 16
+
 // Client 是 SDK 的统一入口。
 // 事件流默认经过归一化管线(强类型解析 + 方言补拉);RawEvents 提供原始旁路。
 type Client struct {
@@ -116,7 +120,10 @@ func NewHTTPClient(baseURL string, opts ...Option) *Client {
 		Timeout: cfg.httpTimeout,
 		Client:  cfg.httpClient,
 	})
-	return &Client{api: api.NewClient(caller), opts: cfg}
+	// 事件流返回已关闭通道:消费方 range 立即结束,nil channel 会永久阻塞
+	events := make(chan event.Event)
+	close(events)
+	return &Client{api: api.NewClient(caller), opts: cfg, events: events}
 }
 
 // DialWebSocket 创建基于正向 WebSocket 的 client。
@@ -233,17 +240,24 @@ func (c *Client) API() *api.Client {
 	return c.api
 }
 
-// Events 返回归一化事件流。HTTP client 没有事件流，返回 nil。
+// Events 返回归一化事件流。HTTP client 没有事件流,返回已关闭通道,range 立即结束。
 func (c *Client) Events() <-chan event.Event {
 	return c.events
 }
 
+// closedRawEvents 供 HTTP client 的 RawEvents 返回已关闭通道,避免 nil channel 永久阻塞。
+var closedRawEvents = func() chan []byte {
+	ch := make(chan []byte)
+	close(ch)
+	return ch
+}()
+
 // RawEvents 返回原始事件 JSON 的旁路流,供绕过归一化管线自行解析。
 // 与 Events 并存:每个事件帧同时进入两者,不是二选一。
-// 须在事件开始到达前调用,之后才调用的帧不会回放;HTTP client 返回 nil。
+// 须在事件开始到达前调用,之后才调用的帧不会回放;HTTP client 返回已关闭通道。
 func (c *Client) RawEvents() <-chan []byte {
 	if c.ws == nil {
-		return nil
+		return closedRawEvents
 	}
 	return c.ws.TeeRawEvents()
 }
@@ -280,18 +294,17 @@ func collectOptions(opts ...Option) options {
 	for _, opt := range opts {
 		opt(&cfg)
 	}
+	if cfg.eventBuffer <= 0 {
+		cfg.eventBuffer = defaultEventBuffer
+	}
 	return cfg
 }
 
 func newWSClient(caller *transport.WebSocketCaller, cfg options, d dialect.Dialect) *Client {
-	eventBuffer := cfg.eventBuffer
-	if eventBuffer <= 0 {
-		eventBuffer = 16
-	}
 	c := &Client{
 		api:    api.NewClient(caller),
 		ws:     caller,
-		events: make(chan event.Event, eventBuffer),
+		events: make(chan event.Event, cfg.eventBuffer),
 		opts:   cfg,
 	}
 	c.dialectMu.Lock()

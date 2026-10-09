@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strconv"
 
 	"github.com/zjutjh/onebot-sdk"
 	"github.com/zjutjh/onebot-sdk/api"
@@ -37,9 +36,8 @@ func main() {
 		switch e := ev.(type) {
 		case *event.PrivateMessage:
 			if e.Message.Text() == "/ping" {
-				userID := strconv.FormatInt(e.UserID.Int64(), 10)
 				_, _ = client.API().SendPrivateMsg(ctx, api.SendPrivateMsgRequest{
-					UserID:  &userID,
+					UserID:  e.UserID,
 					Message: pong,
 				})
 			}

@@ -3,7 +3,11 @@
 
 package api
 
-import json "github.com/zjutjh/onebot-sdk/internal/jsonx"
+import (
+	json "github.com/zjutjh/onebot-sdk/internal/jsonx"
+
+	"github.com/zjutjh/onebot-sdk/message"
+)
 
 // BaseResponseStream 流式响应.
 type BaseResponseStream string
@@ -872,13 +876,13 @@ type OB11Message struct {
 	// 消息发送类型.
 	MessageSentType *string `json:"message_sent_type,omitempty"`
 	// 目标ID.
-	TargetID *float64 `json:"target_id,omitempty"`
+	TargetID message.ID `json:"target_id,omitempty"`
 	// 机器人QQ号.
-	SelfID *float64 `json:"self_id,omitempty"`
+	SelfID message.ID `json:"self_id,omitempty"`
 	// 消息时间戳.
 	Time float64 `json:"time"`
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 消息序列号.
 	MessageSeq float64 `json:"message_seq"`
 	// 真实ID.
@@ -998,9 +1002,9 @@ type OB11PostSendMsg struct {
 	// 消息类型.
 	MessageType *OB11PostSendMsgMessageType `json:"message_type,omitempty"`
 	// 用户QQ号.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID  *string                  `json:"group_id,omitempty"`
+	GroupID  message.ID               `json:"group_id,omitempty"`
 	Message  OB11MessageMixTypeUnion  `json:"message"`
 	Messages *OB11MessageMixTypeUnion `json:"messages,omitempty"`
 	// 是否作为纯文本发送.
@@ -1065,9 +1069,9 @@ type OB11Sender struct {
 // OB11GroupMember OneBot 11 群成员信息.
 type OB11GroupMember struct {
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 昵称.
 	Nickname string `json:"nickname"`
 	// 名片.
@@ -1111,7 +1115,7 @@ type OB11Group struct {
 	// 群备注.
 	GroupRemark string `json:"group_remark"`
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 群名称.
 	GroupName string `json:"group_name"`
 	// 成员人数.
@@ -1122,7 +1126,7 @@ type OB11Group struct {
 
 type OB11ActionMessageAllOf1Sender struct {
 	// 用户QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 用户昵称.
 	Nickname string `json:"nickname"`
 	// 用户名片.
@@ -1143,9 +1147,9 @@ type OB11ActionMessageAllOf2EmojiLikesListItem struct {
 // OB11ActionMessage OneBot 11 消息信息.
 type OB11ActionMessage struct {
 	// 发送者QQ号.
-	SelfID float64 `json:"self_id"`
+	SelfID message.ID `json:"self_id"`
 	// 接收者QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 时间戳.
 	Time float64 `json:"time"`
 	// 消息序号.
@@ -1166,11 +1170,11 @@ type OB11ActionMessage struct {
 	// 发布类型.
 	PostType string `json:"post_type"`
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 群名称.
 	GroupName string `json:"group_name"`
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 消息序列号.
 	MessageSeq     float64                                     `json:"message_seq"`
 	EmojiLikesList []OB11ActionMessageAllOf2EmojiLikesListItem `json:"emoji_likes_list"`
@@ -1185,7 +1189,7 @@ type OB11Notify struct {
 	// 邀请者昵称.
 	InvitorNick string `json:"invitor_nick"`
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 群名称.
 	GroupName string `json:"group_name"`
 	// 附言.
@@ -1213,7 +1217,7 @@ type OB11User struct {
 	// 分组ID.
 	CategoryID *float64 `json:"category_id,omitempty"`
 	// QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 昵称.
 	Nickname string `json:"nickname"`
 	// 备注.
@@ -1236,7 +1240,7 @@ type OB11User struct {
 
 type OB11LatestMessageSender struct {
 	// 用户QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 用户昵称.
 	Nickname string `json:"nickname"`
 	// 用户名片.
@@ -1248,9 +1252,9 @@ type OB11LatestMessageSender struct {
 // OB11LatestMessage 最后一条消息.
 type OB11LatestMessage struct {
 	// 发送者QQ号.
-	SelfID float64 `json:"self_id"`
+	SelfID message.ID `json:"self_id"`
 	// 接收者QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 时间戳.
 	Time float64 `json:"time"`
 	// 消息序号.
@@ -1271,14 +1275,14 @@ type OB11LatestMessage struct {
 	// 发布类型.
 	PostType string `json:"post_type"`
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 群名称.
 	GroupName string `json:"group_name"`
 }
 
 type DotHandleQuickOperationRequestContextSender struct {
 	// 用户ID.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 昵称.
 	Nickname string `json:"nickname"`
 	// 性别.
@@ -1298,7 +1302,7 @@ type DotHandleQuickOperationRequestContext struct {
 	// 事件发生时间.
 	Time float64 `json:"time"`
 	// 收到事件的机器人 QQ 号.
-	SelfID float64 `json:"self_id"`
+	SelfID message.ID `json:"self_id"`
 	// 上报类型.
 	PostType string `json:"post_type"`
 	// 消息类型.
@@ -1306,11 +1310,11 @@ type DotHandleQuickOperationRequestContext struct {
 	// 消息子类型.
 	SubType *string `json:"sub_type,omitempty"`
 	// 发送者 QQ 号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 消息 ID.
-	MessageID *float64 `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 	// 消息序列号.
 	MessageSeq *float64 `json:"message_seq,omitempty"`
 	// 真实消息 ID.
@@ -1376,7 +1380,7 @@ type DotOcrImageResponse map[string]any
 // ArkShareGroupRequest 分享群 (Ark) 请求参数。
 type ArkShareGroupRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // ArkShareGroupResponse 业务数据.
@@ -1385,9 +1389,9 @@ type ArkShareGroupResponse string
 // ArkSharePeerRequest 分享用户 (Ark) 请求参数。
 type ArkSharePeerRequest struct {
 	// QQ号.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 手机号.
 	PhoneNumber string `json:"phone_number"`
 }
@@ -1398,7 +1402,7 @@ type ArkSharePeerResponse map[string]any
 // UnderscoreDelGroupNoticeRequest 删除群公告 请求参数。
 type UnderscoreDelGroupNoticeRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 公告ID.
 	NoticeID string `json:"notice_id"`
 }
@@ -1409,7 +1413,7 @@ type UnderscoreDelGroupNoticeResponse map[string]any
 // UnderscoreGetGroupNoticeRequest 获取群公告 请求参数。
 type UnderscoreGetGroupNoticeRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // UnderscoreGetGroupNoticeResponseItemMessage 公告内容.
@@ -1424,7 +1428,7 @@ type UnderscoreGetGroupNoticeResponseItemMessage struct {
 
 type UnderscoreGetGroupNoticeResponseItem struct {
 	// 发送者QQ.
-	SenderID float64 `json:"sender_id"`
+	SenderID message.ID `json:"sender_id"`
 	// 发布时间.
 	PublishTime float64 `json:"publish_time"`
 	// 公告ID.
@@ -1593,7 +1597,7 @@ func (u UnderscoreSendGroupNoticeRequestTipWindowTypeUnion) Bytes() []byte {
 // UnderscoreSendGroupNoticeRequest 发送群公告 请求参数。
 type UnderscoreSendGroupNoticeRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 公告内容.
 	Content string `json:"content"`
 	// 公告图片路径或 URL.
@@ -1741,7 +1745,7 @@ type CanSendRecordResponse struct {
 // CancelGroupAlbumMediaLikeRequest 取消点赞群相册媒体 请求参数。
 type CancelGroupAlbumMediaLikeRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册ID.
 	AlbumID string `json:"album_id"`
 	// batch_id.
@@ -1782,7 +1786,7 @@ type CancelGroupTodoRequest struct {
 	// 群号.
 	GroupID CancelGroupTodoRequestGroupIDUnion `json:"group_id"`
 	// 消息ID.
-	MessageID *string `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 	// 消息Seq (可选)
 	MessageSeq *string `json:"message_seq,omitempty"`
 }
@@ -1793,7 +1797,7 @@ type CancelGroupTodoResponse any
 // CancelOnlineFileRequest 取消在线文件 请求参数。
 type CancelOnlineFileRequest struct {
 	// 用户 QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 消息 ID.
 	MsgID string `json:"msg_id"`
 }
@@ -1828,7 +1832,7 @@ type CleanStreamTempFileResponse any
 // ClickInlineKeyboardButtonRequest 点击内联键盘按钮 请求参数。
 type ClickInlineKeyboardButtonRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 机器人AppID.
 	BotAppid string `json:"bot_appid"`
 	// 按钮ID.
@@ -1871,7 +1875,7 @@ type CompleteGroupTodoRequest struct {
 	// 群号.
 	GroupID CompleteGroupTodoRequestGroupIDUnion `json:"group_id"`
 	// 消息ID.
-	MessageID *string `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 	// 消息Seq (可选)
 	MessageSeq *string `json:"message_seq,omitempty"`
 }
@@ -1930,7 +1934,7 @@ type CreateFlashTaskResponse map[string]any
 // CreateGroupFileFolderRequest 创建群文件目录 请求参数。
 type CreateGroupFileFolderRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件夹名称.
 	FolderName *string `json:"folder_name,omitempty"`
 	// 文件夹名称.
@@ -1948,7 +1952,7 @@ type CreateGroupFileFolderResponse struct {
 // DelGroupAlbumMediaRequest 删除群相册媒体 请求参数。
 type DelGroupAlbumMediaRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册ID.
 	AlbumID string `json:"album_id"`
 	// 媒体ID (lloc)
@@ -2074,7 +2078,7 @@ type DeleteEssenceMsgRequest struct {
 	// 消息随机数.
 	MsgRandom *string `json:"msg_random,omitempty"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 }
 
 // DeleteEssenceMsgResponse 业务数据.
@@ -2146,7 +2150,7 @@ type DeleteFriendResponse any
 // DeleteGroupFileRequest 删除群文件 请求参数。
 type DeleteGroupFileRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件ID.
 	FileID string `json:"file_id"`
 }
@@ -2157,7 +2161,7 @@ type DeleteGroupFileResponse map[string]any
 // DeleteGroupFolderRequest 删除群文件目录 请求参数。
 type DeleteGroupFolderRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件夹ID.
 	FolderID *string `json:"folder_id,omitempty"`
 	// 文件夹ID.
@@ -2212,7 +2216,7 @@ type DeleteQzoneMsgResponse any
 // DoGroupAlbumCommentRequest 发表群相册评论 请求参数。
 type DoGroupAlbumCommentRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册 ID.
 	AlbumID string `json:"album_id"`
 	// 图片 ID.
@@ -2582,9 +2586,9 @@ type ForwardFriendSingleMsgRequest struct {
 	// 消息ID.
 	MessageID ForwardFriendSingleMsgRequestMessageIDUnion `json:"message_id"`
 	// 目标群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 目标用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 }
 
 // ForwardFriendSingleMsgResponse 业务数据.
@@ -2619,9 +2623,9 @@ type ForwardGroupSingleMsgRequest struct {
 	// 消息ID.
 	MessageID ForwardGroupSingleMsgRequestMessageIDUnion `json:"message_id"`
 	// 目标群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 目标用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 }
 
 // ForwardGroupSingleMsgResponse 业务数据.
@@ -2630,11 +2634,11 @@ type ForwardGroupSingleMsgResponse any
 // FriendPokeRequest 发送戳一戳 请求参数。
 type FriendPokeRequest struct {
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 目标QQ.
-	TargetID *string `json:"target_id,omitempty"`
+	TargetID message.ID `json:"target_id,omitempty"`
 }
 
 // FriendPokeResponse 业务数据.
@@ -2667,7 +2671,7 @@ func (u GetAiCharactersRequestChatTypeUnion) Bytes() []byte {
 // GetAiCharactersRequest 获取AI角色列表 请求参数。
 type GetAiCharactersRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 聊天类型.
 	ChatType GetAiCharactersRequestChatTypeUnion `json:"chat_type"`
 }
@@ -2696,7 +2700,7 @@ type GetAiRecordRequest struct {
 	// 角色ID.
 	Character string `json:"character"`
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 语音文本内容.
 	Text string `json:"text"`
 }
@@ -2773,9 +2777,9 @@ type GetDoubtFriendsAddRequestResponse map[string]any
 // GetEmojiLikesRequest 获取消息表情点赞列表 请求参数。
 type GetEmojiLikesRequest struct {
 	// 群号，短ID可不传.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 消息ID，可以传递长ID或短ID.
-	MessageID string `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 表情ID.
 	EmojiID string `json:"emoji_id"`
 	// 表情类型.
@@ -2786,7 +2790,7 @@ type GetEmojiLikesRequest struct {
 
 type GetEmojiLikesResponseEmojiLikeListItem struct {
 	// 点击者QQ号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 昵称?
 	NickName string `json:"nick_name"`
 }
@@ -2800,7 +2804,7 @@ type GetEmojiLikesResponse struct {
 // GetEssenceMsgListRequest 获取群精华消息 请求参数。
 type GetEssenceMsgListRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 type GetEssenceMsgListResponseItem struct {
@@ -2809,15 +2813,15 @@ type GetEssenceMsgListResponseItem struct {
 	// 消息随机数.
 	MsgRandom float64 `json:"msg_random"`
 	// 发送者QQ.
-	SenderID float64 `json:"sender_id"`
+	SenderID message.ID `json:"sender_id"`
 	// 发送者昵称.
 	SenderNick string `json:"sender_nick"`
 	// 操作者QQ.
-	OperatorID float64 `json:"operator_id"`
+	OperatorID message.ID `json:"operator_id"`
 	// 操作者昵称.
 	OperatorNick string `json:"operator_nick"`
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 操作时间.
 	OperatorTime float64 `json:"operator_time"`
 	// 消息内容.
@@ -2895,7 +2899,7 @@ type GetFlashFileURLResponse map[string]any
 // GetForwardMsgRequest 获取合并转发消息 请求参数。
 type GetForwardMsgRequest struct {
 	// 消息ID.
-	MessageID *string `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 	// 消息ID.
 	ID *string `json:"id,omitempty"`
 }
@@ -2942,7 +2946,7 @@ type GetFriendListResponse []OB11User
 // GetFriendMsgHistoryRequest 获取好友历史消息 请求参数。
 type GetFriendMsgHistoryRequest struct {
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 起始消息序号.
 	MessageSeq *string `json:"message_seq,omitempty"`
 	// 获取消息数量.
@@ -2985,7 +2989,7 @@ type GetFriendsWithCategoryResponse []GetFriendsWithCategoryResponseItem
 // GetGroupAlbumMediaListRequest 获取群相册媒体列表 请求参数。
 type GetGroupAlbumMediaListRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册ID.
 	AlbumID string `json:"album_id"`
 	// 附加信息（用于分页）
@@ -2998,7 +3002,7 @@ type GetGroupAlbumMediaListResponse map[string]any
 // GetGroupAtAllRemainRequest 获取群艾特全体剩余次数 请求参数。
 type GetGroupAtAllRemainRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // GetGroupAtAllRemainResponse 业务数据.
@@ -3014,13 +3018,13 @@ type GetGroupAtAllRemainResponse struct {
 // GetGroupDetailInfoRequest 获取群详细信息 请求参数。
 type GetGroupDetailInfoRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // GetGroupDetailInfoResponse 业务数据.
 type GetGroupDetailInfoResponse struct {
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 群名称.
 	GroupName string `json:"group_name"`
 	// 成员数量.
@@ -3036,7 +3040,7 @@ type GetGroupDetailInfoResponse struct {
 // GetGroupFileSystemInfoRequest 获取群文件系统信息 请求参数。
 type GetGroupFileSystemInfoRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // GetGroupFileSystemInfoResponse 业务数据.
@@ -3054,7 +3058,7 @@ type GetGroupFileSystemInfoResponse struct {
 // GetGroupFileURLRequest 获取群文件URL 请求参数。
 type GetGroupFileURLRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件ID.
 	FileID string `json:"file_id"`
 }
@@ -3092,7 +3096,7 @@ func (u GetGroupFilesByFolderRequestFileCountUnion) Bytes() []byte {
 // GetGroupFilesByFolderRequest 获取群文件夹文件列表 请求参数。
 type GetGroupFilesByFolderRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件夹ID.
 	FolderID *string `json:"folder_id,omitempty"`
 	// 文件夹ID.
@@ -3124,7 +3128,7 @@ const (
 // GetGroupHonorInfoRequest 获取群荣誉信息 请求参数。
 type GetGroupHonorInfoRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 荣誉类型.
 	Type *GetGroupHonorInfoRequestType `json:"type,omitempty"`
 }
@@ -3132,7 +3136,7 @@ type GetGroupHonorInfoRequest struct {
 // GetGroupHonorInfoResponse 业务数据.
 type GetGroupHonorInfoResponse struct {
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 当前龙王.
 	CurrentTalkative map[string]any `json:"current_talkative"`
 	// 龙王列表.
@@ -3159,7 +3163,7 @@ type GetGroupIgnoreAddRequestResponseItem struct {
 	// 邀请者昵称.
 	InvitorNick *string `json:"invitor_nick,omitempty"`
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 验证信息.
 	Message *string `json:"message,omitempty"`
 	// 群名称.
@@ -3191,7 +3195,7 @@ type GetGroupIgnoredNotifiesResponse struct {
 // GetGroupInfoRequest 获取群信息 请求参数。
 type GetGroupInfoRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // GetGroupInfoResponse OneBot 11 群信息.
@@ -3201,7 +3205,7 @@ type GetGroupInfoResponse struct {
 	// 群备注.
 	GroupRemark string `json:"group_remark"`
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 群名称.
 	GroupName string `json:"group_name"`
 	// 成员人数.
@@ -3213,7 +3217,7 @@ type GetGroupInfoResponse struct {
 // GetGroupInfoExRequest 获取群详细信息 (扩展) 请求参数。
 type GetGroupInfoExRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // GetGroupInfoExResponse 业务数据.
@@ -3279,9 +3283,9 @@ func (u GetGroupMemberInfoRequestNoCacheUnion) Bytes() []byte {
 // GetGroupMemberInfoRequest 获取群成员信息 请求参数。
 type GetGroupMemberInfoRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// QQ号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 是否不使用缓存.
 	NoCache *GetGroupMemberInfoRequestNoCacheUnion `json:"no_cache,omitempty"`
 }
@@ -3289,9 +3293,9 @@ type GetGroupMemberInfoRequest struct {
 // GetGroupMemberInfoResponse OneBot 11 群成员信息.
 type GetGroupMemberInfoResponse struct {
 	// 群号.
-	GroupID float64 `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 昵称.
 	Nickname string `json:"nickname"`
 	// 名片.
@@ -3355,7 +3359,7 @@ func (u GetGroupMemberListRequestNoCacheUnion) Bytes() []byte {
 // GetGroupMemberListRequest 获取群成员列表 请求参数。
 type GetGroupMemberListRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 是否不使用缓存.
 	NoCache *GetGroupMemberListRequestNoCacheUnion `json:"no_cache,omitempty"`
 }
@@ -3366,7 +3370,7 @@ type GetGroupMemberListResponse []any
 // GetGroupMsgHistoryRequest 获取群历史消息 请求参数。
 type GetGroupMsgHistoryRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 起始消息序号.
 	MessageSeq *string `json:"message_seq,omitempty"`
 	// 获取消息数量.
@@ -3416,7 +3420,7 @@ func (u GetGroupRootFilesRequestFileCountUnion) Bytes() []byte {
 // GetGroupRootFilesRequest 获取群根目录文件列表 请求参数。
 type GetGroupRootFilesRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件数量.
 	FileCount GetGroupRootFilesRequestFileCountUnion `json:"file_count"`
 }
@@ -3523,7 +3527,7 @@ type GetGroupShareLinkResponse struct {
 // GetGroupShutListRequest 获取群禁言列表 请求参数。
 type GetGroupShutListRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // GetGroupShutListResponse 业务数据.
@@ -3561,7 +3565,7 @@ type GetGroupSignedListRequest struct {
 
 type GetGroupSignedListResponseItem struct {
 	// 打卡者QQ.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 打卡者昵称.
 	Nick string `json:"nick"`
 	// 打卡时间.
@@ -3665,7 +3669,7 @@ type GetLoginInfoResponse struct {
 	// 分组ID.
 	CategoryID *float64 `json:"category_id,omitempty"`
 	// QQ号.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 昵称.
 	Nickname string `json:"nickname"`
 	// 备注.
@@ -3801,7 +3805,7 @@ type GetMsgResponse struct {
 	// 消息类型.
 	MessageType string `json:"message_type"`
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 真实ID.
 	RealID float64 `json:"real_id"`
 	// 消息序号.
@@ -3831,7 +3835,7 @@ type GetOnlineClientsResponse []any
 // GetOnlineFileMsgRequest 获取在线文件消息 请求参数。
 type GetOnlineFileMsgRequest struct {
 	// 用户 QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 }
 
 // GetOnlineFileMsgResponse 业务数据.
@@ -3900,7 +3904,7 @@ func (u GetProfileLikeRequestCountUnion) Bytes() []byte {
 // GetProfileLikeRequest 获取资料点赞 请求参数。
 type GetProfileLikeRequest struct {
 	// QQ号.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 起始位置.
 	Start GetProfileLikeRequestStartUnion `json:"start"`
 	// 获取数量.
@@ -3944,7 +3948,7 @@ type GetProfileLikeResponse struct {
 // GetQunAlbumListRequest 获取群相册列表 请求参数。
 type GetQunAlbumListRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 附加信息（用于分页，从上一次返回结果中获取）
 	AttachInfo *string `json:"attach_info,omitempty"`
 }
@@ -4124,7 +4128,7 @@ func (u GetStrangerInfoRequestNoCacheUnion) Bytes() []byte {
 // GetStrangerInfoRequest 获取陌生人信息 请求参数。
 type GetStrangerInfoRequest struct {
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 是否不使用缓存.
 	NoCache GetStrangerInfoRequestNoCacheUnion `json:"no_cache"`
 }
@@ -4132,7 +4136,7 @@ type GetStrangerInfoRequest struct {
 // GetStrangerInfoResponse 业务数据.
 type GetStrangerInfoResponse struct {
 	// 用户QQ.
-	UserID float64 `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// UID.
 	UID string `json:"uid"`
 	// 昵称.
@@ -4198,11 +4202,11 @@ type GetVersionInfoResponse struct {
 // GroupPokeRequest 发送戳一戳 请求参数。
 type GroupPokeRequest struct {
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 目标QQ.
-	TargetID *string `json:"target_id,omitempty"`
+	TargetID message.ID `json:"target_id,omitempty"`
 }
 
 // GroupPokeResponse 业务数据.
@@ -4237,9 +4241,9 @@ type MarkGroupMsgAsReadRequest struct {
 	// 用户QQ.
 	UserID *MarkGroupMsgAsReadRequestUserIDUnion `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 消息ID.
-	MessageID *string `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 }
 
 // MarkGroupMsgAsReadResponse 业务数据.
@@ -4274,9 +4278,9 @@ type MarkMsgAsReadRequest struct {
 	// 用户QQ.
 	UserID *MarkMsgAsReadRequestUserIDUnion `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 消息ID.
-	MessageID *string `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 }
 
 // MarkMsgAsReadResponse 业务数据.
@@ -4311,9 +4315,9 @@ type MarkPrivateMsgAsReadRequest struct {
 	// 用户QQ.
 	UserID *MarkPrivateMsgAsReadRequestUserIDUnion `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 消息ID.
-	MessageID *string `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 }
 
 // MarkPrivateMsgAsReadResponse 业务数据.
@@ -4322,7 +4326,7 @@ type MarkPrivateMsgAsReadResponse any
 // MoveGroupFileRequest 移动群文件 请求参数。
 type MoveGroupFileRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件ID.
 	FileID string `json:"file_id"`
 	// 当前父目录.
@@ -4352,7 +4356,7 @@ type NcGetRkeyResponse []any
 // NcGetUserStatusRequest 获取用户在线状态 请求参数。
 type NcGetUserStatusRequest struct {
 	// QQ号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 }
 
 // NcGetUserStatusResponse 业务数据.
@@ -4375,7 +4379,7 @@ type OcrImageResponse map[string]any
 // ReceiveOnlineFileRequest 接收在线文件 请求参数。
 type ReceiveOnlineFileRequest struct {
 	// 用户 QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 消息 ID.
 	MsgID string `json:"msg_id"`
 	// 元素 ID.
@@ -4388,7 +4392,7 @@ type ReceiveOnlineFileResponse map[string]any
 // RefuseOnlineFileRequest 拒绝在线文件 请求参数。
 type RefuseOnlineFileRequest struct {
 	// 用户 QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 消息 ID.
 	MsgID string `json:"msg_id"`
 	// 元素 ID.
@@ -4401,7 +4405,7 @@ type RefuseOnlineFileResponse map[string]any
 // RenameGroupFileRequest 重命名群文件 请求参数。
 type RenameGroupFileRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件ID.
 	FileID string `json:"file_id"`
 	// 当前父目录.
@@ -4419,9 +4423,9 @@ type RenameGroupFileResponse struct {
 // SendArkShareRequest 分享用户 (Ark) 请求参数。
 type SendArkShareRequest struct {
 	// QQ号.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 手机号.
 	PhoneNumber string `json:"phone_number"`
 }
@@ -4434,9 +4438,9 @@ type SendFlashMsgRequest struct {
 	// 文件集 ID.
 	FilesetID string `json:"fileset_id"`
 	// 用户 QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 }
 
 // SendFlashMsgResponse 业务数据.
@@ -4483,9 +4487,9 @@ type SendForwardMsgRequest struct {
 	// 消息类型 (private/group)
 	MessageType *SendForwardMsgRequestMessageType `json:"message_type,omitempty"`
 	// 用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string                 `json:"group_id,omitempty"`
+	GroupID message.ID              `json:"group_id,omitempty"`
 	Message OB11MessageMixTypeUnion `json:"message"`
 	// 是否作为纯文本发送.
 	AutoEscape *SendForwardMsgRequestAutoEscapeUnion `json:"auto_escape,omitempty"`
@@ -4504,7 +4508,7 @@ type SendForwardMsgRequest struct {
 // SendForwardMsgResponse 业务数据.
 type SendForwardMsgResponse struct {
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 转发消息的 res_id.
 	ResID *string `json:"res_id,omitempty"`
 	// 转发消息的 forward_id.
@@ -4516,7 +4520,7 @@ type SendGroupAiRecordRequest struct {
 	// 角色ID.
 	Character string `json:"character"`
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 语音文本内容.
 	Text string `json:"text"`
 }
@@ -4524,13 +4528,13 @@ type SendGroupAiRecordRequest struct {
 // SendGroupAiRecordResponse 业务数据.
 type SendGroupAiRecordResponse struct {
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 }
 
 // SendGroupArkShareRequest 分享群 (Ark) 请求参数。
 type SendGroupArkShareRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // SendGroupArkShareResponse 业务数据.
@@ -4577,9 +4581,9 @@ type SendGroupForwardMsgRequest struct {
 	// 消息类型 (private/group)
 	MessageType *SendGroupForwardMsgRequestMessageType `json:"message_type,omitempty"`
 	// 用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string                 `json:"group_id,omitempty"`
+	GroupID message.ID              `json:"group_id,omitempty"`
 	Message OB11MessageMixTypeUnion `json:"message"`
 	// 是否作为纯文本发送.
 	AutoEscape *SendGroupForwardMsgRequestAutoEscapeUnion `json:"auto_escape,omitempty"`
@@ -4598,7 +4602,7 @@ type SendGroupForwardMsgRequest struct {
 // SendGroupForwardMsgResponse 业务数据.
 type SendGroupForwardMsgResponse struct {
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 转发消息的 res_id.
 	ResID *string `json:"res_id,omitempty"`
 	// 转发消息的 forward_id.
@@ -4646,9 +4650,9 @@ type SendGroupMsgRequest struct {
 	// 消息类型 (private/group)
 	MessageType *SendGroupMsgRequestMessageType `json:"message_type,omitempty"`
 	// 用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string                 `json:"group_id,omitempty"`
+	GroupID message.ID              `json:"group_id,omitempty"`
 	Message OB11MessageMixTypeUnion `json:"message"`
 	// 是否作为纯文本发送.
 	AutoEscape *SendGroupMsgRequestAutoEscapeUnion `json:"auto_escape,omitempty"`
@@ -4667,7 +4671,7 @@ type SendGroupMsgRequest struct {
 // SendGroupMsgResponse 业务数据.
 type SendGroupMsgResponse struct {
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 转发消息的 res_id.
 	ResID *string `json:"res_id,omitempty"`
 	// 转发消息的 forward_id.
@@ -4677,7 +4681,7 @@ type SendGroupMsgResponse struct {
 // SendGroupSignRequest 群打卡 请求参数。
 type SendGroupSignRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // SendGroupSignResponse 业务数据.
@@ -4710,7 +4714,7 @@ func (u SendLikeRequestTimesUnion) Bytes() []byte {
 // SendLikeRequest 点赞 请求参数。
 type SendLikeRequest struct {
 	// 对方 QQ 号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 点赞次数.
 	Times SendLikeRequestTimesUnion `json:"times"`
 }
@@ -4759,9 +4763,9 @@ type SendMsgRequest struct {
 	// 消息类型 (private/group)
 	MessageType *SendMsgRequestMessageType `json:"message_type,omitempty"`
 	// 用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string                 `json:"group_id,omitempty"`
+	GroupID message.ID              `json:"group_id,omitempty"`
 	Message OB11MessageMixTypeUnion `json:"message"`
 	// 是否作为纯文本发送.
 	AutoEscape *SendMsgRequestAutoEscapeUnion `json:"auto_escape,omitempty"`
@@ -4780,7 +4784,7 @@ type SendMsgRequest struct {
 // SendMsgResponse 业务数据.
 type SendMsgResponse struct {
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 转发消息的 res_id.
 	ResID *string `json:"res_id,omitempty"`
 	// 转发消息的 forward_id.
@@ -4790,7 +4794,7 @@ type SendMsgResponse struct {
 // SendOnlineFileRequest 发送在线文件 请求参数。
 type SendOnlineFileRequest struct {
 	// 用户 QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 本地文件路径.
 	FilePath string `json:"file_path"`
 	// 文件名 (可选)
@@ -4803,7 +4807,7 @@ type SendOnlineFileResponse map[string]any
 // SendOnlineFolderRequest 发送在线文件夹 请求参数。
 type SendOnlineFolderRequest struct {
 	// 用户 QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 本地文件夹路径.
 	FolderPath string `json:"folder_path"`
 	// 文件夹名称 (可选)
@@ -4853,11 +4857,11 @@ type SendPacketResponseVariant1 string
 // SendPokeRequest 发送戳一戳 请求参数。
 type SendPokeRequest struct {
 	// 群号.
-	GroupID *string `json:"group_id,omitempty"`
+	GroupID message.ID `json:"group_id,omitempty"`
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 目标QQ.
-	TargetID *string `json:"target_id,omitempty"`
+	TargetID message.ID `json:"target_id,omitempty"`
 }
 
 // SendPokeResponse 业务数据.
@@ -4904,9 +4908,9 @@ type SendPrivateForwardMsgRequest struct {
 	// 消息类型 (private/group)
 	MessageType *SendPrivateForwardMsgRequestMessageType `json:"message_type,omitempty"`
 	// 用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string                 `json:"group_id,omitempty"`
+	GroupID message.ID              `json:"group_id,omitempty"`
 	Message OB11MessageMixTypeUnion `json:"message"`
 	// 是否作为纯文本发送.
 	AutoEscape *SendPrivateForwardMsgRequestAutoEscapeUnion `json:"auto_escape,omitempty"`
@@ -4925,7 +4929,7 @@ type SendPrivateForwardMsgRequest struct {
 // SendPrivateForwardMsgResponse 业务数据.
 type SendPrivateForwardMsgResponse struct {
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 转发消息的 res_id.
 	ResID *string `json:"res_id,omitempty"`
 	// 转发消息的 forward_id.
@@ -4973,9 +4977,9 @@ type SendPrivateMsgRequest struct {
 	// 消息类型 (private/group)
 	MessageType *SendPrivateMsgRequestMessageType `json:"message_type,omitempty"`
 	// 用户QQ.
-	UserID *string `json:"user_id,omitempty"`
+	UserID message.ID `json:"user_id,omitempty"`
 	// 群号.
-	GroupID *string                 `json:"group_id,omitempty"`
+	GroupID message.ID              `json:"group_id,omitempty"`
 	Message OB11MessageMixTypeUnion `json:"message"`
 	// 是否作为纯文本发送.
 	AutoEscape *SendPrivateMsgRequestAutoEscapeUnion `json:"auto_escape,omitempty"`
@@ -4994,7 +4998,7 @@ type SendPrivateMsgRequest struct {
 // SendPrivateMsgResponse 业务数据.
 type SendPrivateMsgResponse struct {
 	// 消息ID.
-	MessageID float64 `json:"message_id"`
+	MessageID message.ID `json:"message_id"`
 	// 转发消息的 res_id.
 	ResID *string `json:"res_id,omitempty"`
 	// 转发消息的 forward_id.
@@ -5252,7 +5256,7 @@ type SetFriendAddRequestResponse any
 // SetFriendRemarkRequest 设置好友备注 请求参数。
 type SetFriendRemarkRequest struct {
 	// 对方 QQ 号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 备注内容.
 	Remark string `json:"remark"`
 }
@@ -5263,7 +5267,7 @@ type SetFriendRemarkResponse any
 // SetGroupAddOptionRequest 设置群加群选项 请求参数。
 type SetGroupAddOptionRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 加群方式.
 	AddType float64 `json:"add_type"`
 	// 加群问题.
@@ -5340,9 +5344,9 @@ func (u SetGroupAdminRequestEnableUnion) Bytes() []byte {
 // SetGroupAdminRequest 设置群管理员 请求参数。
 type SetGroupAdminRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 是否设置为管理员.
 	Enable *SetGroupAdminRequestEnableUnion `json:"enable,omitempty"`
 }
@@ -5353,7 +5357,7 @@ type SetGroupAdminResponse any
 // SetGroupAlbumMediaLikeRequest 点赞群相册媒体 请求参数。
 type SetGroupAlbumMediaLikeRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册ID.
 	AlbumID string `json:"album_id"`
 	// batch_id.
@@ -5392,9 +5396,9 @@ func (u SetGroupBanRequestDurationUnion) Bytes() []byte {
 // SetGroupBanRequest 群组禁言 请求参数。
 type SetGroupBanRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 禁言时长(秒)
 	Duration SetGroupBanRequestDurationUnion `json:"duration"`
 }
@@ -5405,9 +5409,9 @@ type SetGroupBanResponse any
 // SetGroupCardRequest 设置群名片 请求参数。
 type SetGroupCardRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 群名片.
 	Card *string `json:"card,omitempty"`
 }
@@ -5442,9 +5446,9 @@ func (u SetGroupKickRequestRejectAddRequestUnion) Bytes() []byte {
 // SetGroupKickRequest 群组踢人 请求参数。
 type SetGroupKickRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 用户QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 是否拒绝加群请求.
 	RejectAddRequest *SetGroupKickRequestRejectAddRequestUnion `json:"reject_add_request,omitempty"`
 }
@@ -5479,7 +5483,7 @@ func (u SetGroupKickMembersRequestRejectAddRequestUnion) Bytes() []byte {
 // SetGroupKickMembersRequest 批量踢出群成员 请求参数。
 type SetGroupKickMembersRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// QQ号列表.
 	UserID []string `json:"user_id"`
 	// 是否拒绝加群请求.
@@ -5516,7 +5520,7 @@ func (u SetGroupLeaveRequestIsDismissUnion) Bytes() []byte {
 // SetGroupLeaveRequest 退出群组 请求参数。
 type SetGroupLeaveRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 是否解散.
 	IsDismiss *SetGroupLeaveRequestIsDismissUnion `json:"is_dismiss,omitempty"`
 }
@@ -5539,7 +5543,7 @@ const (
 // 请求参数。
 type SetGroupMemberInvitePolicyRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 成员邀请策略：禁止、需要管理员审核、无需审核、群成员少于100人时无需审核.
 	Policy SetGroupMemberInvitePolicyRequestPolicy `json:"policy"`
 }
@@ -5550,7 +5554,7 @@ type SetGroupMemberInvitePolicyResponse any
 // SetGroupMemberPermissionsRequest 设置群成员功能权限 请求参数。
 type SetGroupMemberPermissionsRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 允许成员上传群相册.
 	AllowMemberUploadAlbum *bool `json:"allow_member_upload_album,omitempty"`
 	// 允许成员发起临时会话.
@@ -5565,7 +5569,7 @@ type SetGroupMemberPermissionsResponse any
 // SetGroupNameRequest 设置群名称 请求参数。
 type SetGroupNameRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 群名称.
 	GroupName string `json:"group_name"`
 }
@@ -5577,7 +5581,7 @@ type SetGroupNameResponse any
 // 设置新成员历史消息可见性 请求参数。
 type SetGroupNewMemberHistoryVisibilityRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 新成员默认可见最近聊天记录.
 	Visible bool `json:"visible"`
 }
@@ -5590,7 +5594,7 @@ type SetGroupPortraitRequest struct {
 	// 头像文件路径或 URL.
 	File string `json:"file"`
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // SetGroupPortraitResponse 业务数据.
@@ -5602,7 +5606,7 @@ type SetGroupPortraitResponse struct {
 // SetGroupRemarkRequest 设置群备注 请求参数。
 type SetGroupRemarkRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 备注.
 	Remark string `json:"remark"`
 }
@@ -5613,7 +5617,7 @@ type SetGroupRemarkResponse any
 // SetGroupRobotAddOptionRequest 设置群机器人加群选项 请求参数。
 type SetGroupRobotAddOptionRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 机器人成员开关.
 	RobotMemberSwitch *float64 `json:"robot_member_switch,omitempty"`
 	// 机器人成员审核.
@@ -5626,7 +5630,7 @@ type SetGroupRobotAddOptionResponse any
 // SetGroupSearchRequest 设置群搜索选项 请求参数。
 type SetGroupSearchRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 未知.
 	NoCodeFingerOpen *float64 `json:"no_code_finger_open,omitempty"`
 	// 未知.
@@ -5639,7 +5643,7 @@ type SetGroupSearchResponse any
 // SetGroupSignRequest 群打卡 请求参数。
 type SetGroupSignRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 }
 
 // SetGroupSignResponse 业务数据.
@@ -5648,9 +5652,9 @@ type SetGroupSignResponse any
 // SetGroupSpecialTitleRequest 设置专属头衔 请求参数。
 type SetGroupSpecialTitleRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// QQ号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 专属头衔.
 	SpecialTitle string `json:"special_title"`
 }
@@ -5687,7 +5691,7 @@ type SetGroupTodoRequest struct {
 	// 群号.
 	GroupID SetGroupTodoRequestGroupIDUnion `json:"group_id"`
 	// 消息ID.
-	MessageID *string `json:"message_id,omitempty"`
+	MessageID message.ID `json:"message_id,omitempty"`
 	// 消息Seq (可选)
 	MessageSeq *string `json:"message_seq,omitempty"`
 }
@@ -5722,7 +5726,7 @@ func (u SetGroupWholeBanRequestEnableUnion) Bytes() []byte {
 // SetGroupWholeBanRequest 全员禁言 请求参数。
 type SetGroupWholeBanRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 是否开启全员禁言.
 	Enable *SetGroupWholeBanRequestEnableUnion `json:"enable,omitempty"`
 }
@@ -5733,7 +5737,7 @@ type SetGroupWholeBanResponse any
 // SetInputStatusRequest 设置输入状态 请求参数。
 type SetInputStatusRequest struct {
 	// QQ号.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 事件类型.
 	EventType float64 `json:"event_type"`
 }
@@ -5984,7 +5988,7 @@ type TestDownloadStreamResponse map[string]any
 // TransGroupFileRequest 传输群文件 请求参数。
 type TransGroupFileRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 文件ID.
 	FileID string `json:"file_id"`
 }
@@ -6039,7 +6043,7 @@ type UploadFileStreamResponse map[string]any
 // UploadGroupFileRequest 上传群文件 请求参数。
 type UploadGroupFileRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 资源路径或URL.
 	File string `json:"file"`
 	// 文件名.
@@ -6060,7 +6064,7 @@ type UploadGroupFileResponse struct {
 // UploadImageToQunAlbumRequest 上传图片到群相册 请求参数。
 type UploadImageToQunAlbumRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册ID.
 	AlbumID string `json:"album_id"`
 	// 相册名称.
@@ -6075,7 +6079,7 @@ type UploadImageToQunAlbumResponse map[string]any
 // UploadImagesToQunAlbumRequest 上传多张图片到群相册 请求参数。
 type UploadImagesToQunAlbumRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册ID.
 	AlbumID string `json:"album_id"`
 	// 相册名称.
@@ -6090,7 +6094,7 @@ type UploadImagesToQunAlbumResponse map[string]any
 // UploadPrivateFileRequest 上传私聊文件 请求参数。
 type UploadPrivateFileRequest struct {
 	// 用户 QQ.
-	UserID string `json:"user_id"`
+	UserID message.ID `json:"user_id"`
 	// 资源路径或URL.
 	File string `json:"file"`
 	// 文件名.
@@ -6107,7 +6111,7 @@ type UploadPrivateFileResponse struct {
 // UploadVideoToQunAlbumRequest 上传视频到群相册 请求参数。
 type UploadVideoToQunAlbumRequest struct {
 	// 群号.
-	GroupID string `json:"group_id"`
+	GroupID message.ID `json:"group_id"`
 	// 相册ID.
 	AlbumID string `json:"album_id"`
 	// 相册名称.

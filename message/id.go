@@ -46,6 +46,11 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 // Int64 返回 ID 的 int64 值。
 func (id ID) Int64() int64 { return int64(id) }
 
+// MarshalJSON 统一编码为数字;入向接受的字符串形态不出现在出向,两端均接受数字。
+func (id ID) MarshalJSON() ([]byte, error) {
+	return json.Marshal(id.Int64())
+}
+
 // StrNum 是兼容 JSON 字符串和整数的字符串字段,如 at.qq("all" 或 QQ 号)和 face.id。
 type StrNum string
 
