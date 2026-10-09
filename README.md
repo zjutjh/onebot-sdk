@@ -18,7 +18,7 @@
 go get github.com/zjutjh/onebot-sdk
 ```
 
-（v2 起 module 路径由 `github.com/zjutjh/napcat-sdk` 改名为 `github.com/zjutjh/onebot-sdk`，属破坏性变更。）
+（v1.1.0 起 module 路径由 `github.com/zjutjh/napcat-sdk` 改名为 `github.com/zjutjh/onebot-sdk`，属破坏性变更；旧路径的历史版本仍可通过 GitHub 重定向拉取。）
 
 ## 后端与方言
 
